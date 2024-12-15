@@ -1,0 +1,31 @@
+[package]
+name = "orca_whirlpools_core"
+version = "0.1.0"
+description = "Orca's core rust package."
+include = ["src/*"]
+documentation = "https://orca-so.github.io/whirlpools/"
+homepage = "https://orca.so"
+repository = "https://github.com/orca-so/whirlpools"
+license = "Apache-2.0"
+keywords = ["solana", "crypto", "defi", "dex", "amm"]
+authors = ["team@orca.so"]
+edition.workspace = true
+
+[features]
+default = ["floats"]
+wasm = ["dep:wasm-bindgen", "dep:serde", "dep:serde-big-array", "dep:serde-wasm-bindgen", "dep:js-sys", "dep:tsify"]
+floats = ["dep:libm"]
+
+[dependencies]
+ethnum = { workspace = true }
+libm = { workspace = true, optional = true }
+orca_whirlpools_macros = { path = "../macros" }
+wasm-bindgen = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde-big-array = { workspace = true, optional = true }
+serde-wasm-bindgen = { workspace = true, optional = true }
+js-sys = { workspace = true, optional = true }
+tsify = { workspace = true, features = ["js"], optional = true }
+
+[dev-dependencies]
+approx = { workspace = true }

@@ -1,0 +1,37 @@
+[package]
+name = "anchor-spl"
+version = "0.30.1"
+authors = ["Anchor Maintainers <accounts@200ms.io>"]
+edition.workspace = true
+license = "Apache-2.0"
+description = "CPI clients for SPL programs"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["associated_token", "mint", "token", "token_2022", "token_2022_extensions"]
+associated_token = ["spl-associated-token-account"]
+devnet = []
+governance = []
+idl-build = ["anchor-lang/idl-build"]
+memo = ["spl-memo"]
+metadata = ["mpl-token-metadata"]
+mint = []
+stake = ["borsh"]
+token = ["spl-token"]
+token_2022 = ["spl-token-2022"]
+token_2022_extensions = ["spl-token-2022", "spl-token-group-interface", "spl-token-metadata-interface", "spl-pod"]
+
+[dependencies]
+anchor-lang = { path = "../lang", version = "0.30.1", features = ["derive"] }
+borsh = { workspace = true, optional =true}
+mpl-token-metadata = { workspace = true, optional = true }
+spl-associated-token-account = { workspace = true, features = ["no-entrypoint"], optional = true }
+spl-memo = { workspace = true, features = ["no-entrypoint"], optional = true }
+spl-token = { workspace = true, features = ["no-entrypoint"], optional = true }
+spl-token-2022 = { workspace = true, features = ["no-entrypoint"], optional = true }
+spl-token-group-interface = { workspace = true, optional = true }
+spl-token-metadata-interface = { workspace = true, optional = true }
+spl-pod = { workspace = true, optional = true }

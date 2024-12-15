@@ -1,0 +1,77 @@
+[package]
+name = "yellowstone-vixen-parser"
+description = "Vixen program parsers for the solana program library."
+version = "0.0.0"
+edition.workspace = true
+license = "MIT"
+repository = "https://github.com/rpcpool/yellowstone-vixen"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# qtrade added in this dependency
+solana-program = { workspace = true, optional = true } 
+# spl-pod = { version = "0.3.0" }
+spl-pod = { workspace = true }
+# spl-token = { version = "6.0.0",optional = true }
+spl-token = { workspace = true, optional = true }
+# spl-token-2022 = { version = "4.0.0", optional = true }
+spl-token-2022 = { workspace = true, optional = true }
+# spl-type-length-value = { version = "0.5.0", optional = true }
+spl-type-length-value = { version = "0.5.0", optional = true }
+# spl-token-group-interface = { version = "0.3.0", optional = true }
+spl-token-group-interface = { workspace = true, optional = true }
+# spl-token-metadata-interface = { version = "0.4.0", optional = true }
+spl-token-metadata-interface = { workspace = true, optional = true }
+# yellowstone-grpc-proto = { workspace = true }
+yellowstone-grpc-proto = { workspace = true }
+# yellowstone-vixen-core = { workspace = true }
+yellowstone-vixen-core = { path = "../core" }
+# yellowstone-vixen-proto = { workspace = true, features = [
+#     "parser",
+# ], optional = true }
+yellowstone-vixen-proto = { path = "../proto", features = [
+    "parser",
+], optional = true }
+# thiserror = "1.0.64"
+thiserror = { workspace = true}
+# borsh = "1.5.1"
+borsh = { workspace = true}
+# bs58 = "0.5.1"
+bs58 = { workspace = true}
+# orca_whirlpools_client = { version = "0.1.0", optional = true }
+orca_whirlpools_client = { path = "../../../orca/client", optional = true }
+
+
+[dev-dependencies]
+# yellowstone-vixen-mock = { workspace = true }
+yellowstone-vixen-mock = { path = "../mock" }
+# tokio = "1.39.2"
+tokio = { workspace = true }
+
+[features]
+default = []
+proto = [
+  # qtrade: had to add in dependency for spl-token
+  "dep:spl-token",
+  "dep:yellowstone-vixen-proto",
+  "yellowstone-vixen-core/proto",
+  "yellowstone-vixen-proto/parser",
+]
+token-extensions = [
+  # qtrade: added in this dependency
+  # this feature is not working yet
+  "dep:solana-program",
+  "dep:spl-token-2022",
+  "dep:spl-type-length-value",
+  "dep:spl-token-group-interface",
+  "dep:spl-token-metadata-interface",
+  "token-program",
+]
+token-program = [
+  "dep:spl-token",
+]
+orca = [
+  "orca_whirlpools_client",
+]
+raydium = []

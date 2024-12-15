@@ -1,0 +1,28 @@
+[package]
+name = "yellowstone-vixen-mock"
+description = "Mock implementation of the Vixen Parsers for testing."
+version = "0.0.0"
+edition.workspace = true
+license = "MIT"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+yellowstone-grpc-proto = { workspace = true }
+# solana-client = "2.0.3"
+solana-client = { workspace = true }
+# solana-sdk = "2.0.3"
+solana-sdk = { workspace = true }
+# solana-rpc-client-api = "2.0.3"
+solana-rpc-client-api = { workspace = true}
+# yellowstone-vixen-core = { workspace = true }
+yellowstone-vixen-core = { path = "../core" }
+# serde = "1.0.204"
+serde = { workspace = true }
+# serde_json = "1.0.121"
+serde_json = { workspace = true}
+# regex = "1.10.6"
+regex = { workspace = true}
+# solana-transaction-status = "2.0.6"
+solana-transaction-status = { workspace = true }
+# futures = "0.3.31"
+futures = { workspace = true }

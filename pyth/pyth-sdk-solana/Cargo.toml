@@ -1,0 +1,45 @@
+[package]
+name = "pyth-sdk-solana"
+version = "0.10.2"
+authors = ["Pyth Data Foundation"]
+edition.workspace = true
+license = "Apache-2.0"
+homepage = "https://pyth.network"
+repository = "https://github.com/pyth-network/pyth-sdk-rs"
+description = "pyth price oracle data structures and example usage"
+keywords = [ "pyth", "solana", "oracle" ]
+readme = "README.md"
+
+[dependencies]
+# solana-program = ">= 1.9"
+solana-program = { workspace = true }
+# borsh = "0.10.3"
+borsh = { workspace = true}
+# borsh-derive = "0.10.3"
+borsh-derive = { workspace = true }
+# bytemuck = {version ="1.7.2", features = ["derive"]}
+bytemuck = { workspace = true, features = ["derive"]}
+# num-derive = "0.3"
+num-derive = { workspace = true}
+# num-traits = "0.2"
+num-traits = { workspace = true }
+# thiserror = "1.0"
+thiserror = { workspace = true}
+# serde = { version = "1.0.136", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+# pyth-sdk = { path = "../pyth-sdk", version = "0.8.0" }
+pyth-sdk = { path = "../pyth-sdk" }
+
+[dev-dependencies]
+# solana-client = ">= 1.9"
+solana-client = { workspace = true }
+# solana-sdk = ">= 1.9"
+solana-sdk = { workspace = true}
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+# qtrade
+# commenting this out, don't know what it does
+# [package.metadata.docs.rs]
+# targets = ["x86_64-unknown-linux-gnu"]

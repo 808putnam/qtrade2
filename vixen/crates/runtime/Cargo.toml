@@ -1,0 +1,61 @@
+[package]
+name = "yellowstone-vixen"
+description = "An all-in-one consumer runtime library for Yellowstone"
+# authors = ["TODO"]
+version = "0.0.0"
+edition.workspace = true
+license = "MIT"
+repository = "https://github.com/rpcpool/yellowstone-vixen"
+
+[dependencies]
+# clap = { version = "4.5.4", default-features = false, features = [
+#     "env",
+#     "derive",
+#     "std",
+# ] }
+clap = { workspace = true, default-features = false, features = [
+    "env",
+    "derive",
+    "std",
+] }
+# futures-channel = { version = "0.3.30", features = ["sink"] }
+futures-channel = { workspace = true, features = ["sink"] }
+# futures-util = { version = "0.3.30", features = ["sink"] }
+futures-util = { workspace = true, features = ["sink"] }
+# opentelemetry = { version = "0.24.0", features = ["metrics"], optional = true }
+opentelemetry = { workspace = true, features = ["metrics"], optional = true }
+# pin-project-lite = { version = "0.2.14", optional = true }
+pin-project-lite = { workspace = true, optional = true }
+# prometheus = { version = "0.13.4", features = ["push"], optional = true }
+prometheus = { workspace = true, features = ["push"], optional = true }
+# serde = { version = "1.0.198", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+# smallvec = "1.13.2"
+smallvec = { workspace = true}
+# thiserror = "1.0.64"
+thiserror = { workspace = true }
+# tokio = { version = "1.37.0", features = ["rt-multi-thread", "signal"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "signal"] }
+# topograph = { version = "0.4.0", features = [
+#     "tokio",
+# ], git = "https://github.com/ray-kast/topograph", branch = "v0.4-wip" }
+topograph = { workspace = true }
+# tracing = "0.1.40"
+tracing = { workspace = true }
+# yellowstone-grpc-client = { workspace = true }
+yellowstone-grpc-client = { workspace = true }
+# yellowstone-grpc-proto = { workspace = true }
+yellowstone-grpc-proto = { workspace = true }
+# yellowstone-vixen-core = { workspace = true }
+yellowstone-vixen-core = { path = "../core" }
+# yellowstone-vixen-proto = { workspace = true, optional = true }
+yellowstone-vixen-proto = { path = "../proto", optional = true }
+
+[features]
+opentelemetry = ["dep:opentelemetry"]
+prometheus = ["dep:prometheus"]
+stream = [
+  "dep:pin-project-lite",
+  "dep:yellowstone-vixen-proto",
+  "yellowstone-vixen-proto/stream",
+]

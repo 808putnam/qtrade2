@@ -1,0 +1,29 @@
+[package]
+name = "anchor-lang-idl"
+version = "0.1.1"
+authors = ["Anchor Maintainers <accounts@200ms.io>"]
+repository = "https://github.com/coral-xyz/anchor"
+edition.workspace = true
+license = "Apache-2.0"
+description = "Anchor framework IDL"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+build = ["regex"]
+convert = ["heck", "sha2"]
+
+[dependencies]
+anchor-lang-idl-spec = { path = "./spec", version = "0.1.0" }
+anyhow = { workspace = true}
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# `build` feature only
+regex = { workspace = true, optional = true }
+
+# `convert` feature only
+heck = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }

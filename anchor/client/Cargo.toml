@@ -1,0 +1,29 @@
+[package]
+name = "anchor-client"
+version = "0.30.1"
+authors = ["Anchor Maintainers <accounts@200ms.io>"]
+edition.workspace = true
+license = "Apache-2.0"
+description = "An RPC client to interact with Anchor programs"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+async = []
+debug = []
+mock = []
+
+[dependencies]
+anchor-lang = { path = "../lang", version = "0.30.1" }
+anyhow = { workspace = true }
+futures = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+solana-account-decoder = { workspace = true }
+solana-client = { workspace = true}
+solana-sdk = { workspace = true }
+thiserror = { workspace = true}
+tokio = { workspace = true, features = ["rt", "sync"] }
+url = { workspace = true}

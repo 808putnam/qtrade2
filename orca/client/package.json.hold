@@ -1,0 +1,24 @@
+{
+  "name": "@orca-so/whirlpools-rust-client",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "node ./codama.js && cargo build",
+    "test": "cargo test --lib",
+    "format": "cargo clippy --fix --allow-dirty --allow-staged && cargo fmt",
+    "lint": "cargo clippy && cargo fmt --check",
+    "clean": "cargo clean"
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.0.0",
+    "@codama/renderers-rust": "^1.0.3",
+    "@orca-so/whirlpools-program": "*",
+    "@orca-so/whirlpools-rust-core": "*",
+    "codama": "^1.0.0"
+  },
+  "description": "## Overview This package provides developers with low-level functionalities for interacting with the Whirlpool Program on Solana. It serves as a foundational tool that allows developers to manage and integrate detailed operations into their Rust projects, particularly those related to Orca's Whirlpool Program. This package offers granular control for advanced use cases.",
+  "main": "codama.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

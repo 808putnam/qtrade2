@@ -1,0 +1,23 @@
+[package]
+name = "orca_whirlpools_macros"
+version = "0.1.0"
+description = "Orca's rust wasm macros package."
+include = ["src/*"]
+documentation = "https://orca-so.github.io/whirlpools/"
+homepage = "https://orca.so"
+repository = "https://github.com/orca-so/whirlpools"
+license = "Apache-2.0"
+keywords = ["solana", "crypto", "defi", "dex", "amm"]
+authors = ["team@orca.so"]
+edition.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+# modified from ^2 to 1
+syn = { workspace = true, features = ["full"] }
+# modified from ^1 to 1
+quote = { workspace = true }
+# modified from ^1 to 1
+proc-macro2 = { workspace = true }
