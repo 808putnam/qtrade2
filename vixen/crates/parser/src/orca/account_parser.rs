@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-// qtrade: orca_whirlpools_client change the namespacing
+// qtrade: orca_whirlpools_client changed the namespacing
 // use orca_whirlpools_client::accounts::{FeeTier, Position, TickArray, Whirlpool, WhirlpoolsConfig};
 use orca_whirlpools_client::{FeeTier, Position, TickArray, Whirlpool, WhirlpoolsConfig};
 // qtrade: spl_pod changed the namespacing from 0.3.0 to 0.5.0
@@ -76,7 +76,9 @@ impl ProgramParser for AccountParser {
 #[cfg(feature = "proto")]
 mod proto_parser {
 
-    use orca_whirlpools_client::types::{PositionRewardInfo, Tick, WhirlpoolRewardInfo};
+    // qtrade: orca_whirlpools_client changed the namespacing
+    // use orca_whirlpools_client::types::{PositionRewardInfo, Tick, WhirlpoolRewardInfo};
+    use orca_whirlpools_client::{PositionRewardInfo, Tick, WhirlpoolRewardInfo};
     use yellowstone_vixen_core::proto::ParseProto;
     use yellowstone_vixen_proto::parser::{
         orca_program_state_proto, FeeTierProto, OrcaPositionRewardInfoProto, OrcaProgramStateProto,

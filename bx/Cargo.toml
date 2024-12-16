@@ -1,0 +1,82 @@
+[package]
+name = "solana-trader-client-rust"
+version = "0.1.0"
+edition.workspace = true
+authors = ["support@bloxroute.com"]
+description = "Solana Trader API client implementation"
+license = "MIT"
+repository = "https://github.com/bloXroute-Labs/solana-trader-client-rust"
+homepage = "https://bloxroute.com/"
+readme = "README.md"
+keywords = ["solana", "blockchain", "trading", "client", "sdk"]
+categories = ["api-bindings"]
+
+[dependencies]
+# dotenv = "0.15"
+dotenv = { workspace = true }
+# anyhow = "1.0.91"
+anyhow = { workspace = true}
+# futures-util = "0.3.31"
+futures-util = { workspace = true}
+# futures-macro = "0.3.31"
+futures-macro = { workspace = true }
+# lazy_static = "1.5.0"
+lazy_static = { workspace = true }
+# reqwest = { version = "0.12.4", features = ["json"] }
+reqwest = { workspace = true, features = ["json"] }
+# serde = "1.0.213"
+serde = { workspace = true }
+# bitnet = "0.31.9"
+bitnet = { workspace = true }
+# serde_json = "1.0.132"
+serde_json = { workspace = true }
+# solana-sdk = "2.1.0"
+solana-sdk = { workspace = true }
+# solana-hash = "2.1.0"
+solana-hash = { workspace = true }
+# solana-trader-proto = "0.1.1"
+solana-trader-proto = { workspace = true }
+# thiserror = "1.0.65"
+thiserror = { workspace = true }
+# tokio = { version = "1.41.0", features = ["full"] }
+tokio = { workspace = true, features = ["full"] }
+# tokio-tungstenite = { version = "0.24.0", features = ["rustls-tls-webpki-roots"]}
+tokio-tungstenite = { workspace = true, features = ["rustls-tls-webpki-roots"]}
+# tonic = { version = "0.12.3", features = ["tls", "tls-webpki-roots"] }
+tonic = { workspace = true, features = ["tls", "tls-webpki-roots"] }
+# tower = "0.5.1"
+tower = { workspace = true }
+# url = "2.5.2"
+url = { workspace = true }
+# prost = "0.13.3"
+prost = { workspace = true }
+# base64 = "0.22.1"
+base64 = { workspace = true}
+# tokio-rustls = "0.26.0"
+tokio-rustls = { workspace = true }
+# webpki-roots = "0.26.6"
+webpki-roots = { workspace = true}
+# ring = "0.17.8"
+ring = { workspace = true}
+# rustls = { version = "0.23.16", features = ["ring"] }
+rustls = { workspace = true, features = ["ring"] }
+# tokio-stream = { version = "0.1.16", features = ["sync"] }
+tokio-stream = { workspace = true, features = ["sync"] }
+# bincode = "1.3.3"
+bincode = { workspace = true }
+# env_logger = "0.11.5"
+env_logger = { workspace = true}
+# async-trait = "0.1.83"
+async-trait = { workspace = true }
+# tracing = "0.1.40"
+tracing = { workspace = true }
+# serial_test = "3.1.1"
+serial_test = { workspace = true}
+
+[dev-dependencies]
+# test-case = "3.3.1"
+test-case = { workspace = true}
+
+# [patch.crates-io.curve25519-dalek]
+# git = "https://github.com/anza-xyz/curve25519-dalek.git"
+# rev = "b500cdc2a920cd5bff9e2dd974d7b97349d61464"
