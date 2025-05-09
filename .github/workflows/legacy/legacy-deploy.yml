@@ -1,0 +1,80 @@
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'What service are we deploying?'
+        required: true
+        type: choice
+        options:
+        - nautilus-trader
+        - postgres-db
+        - solana-accountsdb-plugin-postgres
+        - solana-postgres-rpc-server
+        - solana-rpc
+        - yellowstone-grpc
+        - yellowstone-vixen       
+      docker_tag:
+        description: 'What tag are we deploying?'
+        required: true
+        type: string
+      target_host_ips:
+        description: 'What IP or Ansible group are we are deploying the service to?'
+        required: true
+        type: string
+      exclude_host_ips:
+          description: 'What IP or Ansible group are we are excluding deploying to?'
+          required: true
+          type: string
+      plan:
+        description: 'What Latitude plan is at this IP or Ansible group?'
+        required: true
+        type: choice
+        options:
+        - m4-metal-large
+        - m4-metal-medium
+        - s3-large-x86
+        - c3-large-x86
+      branch:
+        description: 'What qtrade branch to deploy from?'
+        required: true
+        type: string
+        default: 'main'
+  
+jobs:
+  deploy:
+    name: Deploy via ansible playbook
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ inputs.branch }}"
+      - name: Set up SSH
+        run: |
+          echo "-----BEGIN OPENSSH PRIVATE KEY-----" >> qtrade-latitude
+          echo "${{ secrets.QTRADE_LATITUDE_SSH_PRIVATE_KEY }}" >> qtrade-latitude
+          echo "-----END OPENSSH PRIVATE KEY-----" >> qtrade-latitude
+          chmod 600 qtrade-latitude
+          
+      - name: Install Ansible
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Run ansible playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+
+        run: |
+          cd infra/ansible/${{ inputs.deploy }}
+          ansible-playbook \
+            --user ubuntu \
+            --private-key qtrade-latitude \
+            --inventory inventory/inventory.yml \
+            --list-hosts "!${{ inputs.exclude_host_ips }}" \
+            --extra-vars "host=${{ inputs.target_host_ips }} docker_tag=${{ inputs.docker_tag }}plan=${{ inputs.plan }}" \
+            playbook.yml

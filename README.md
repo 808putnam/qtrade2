@@ -1,12 +1,25 @@
-# qtrade2
-qtrade2 pulls together Solana vendor rust crates across
-- Tooling (anchor)
-- DEX (orca, raydium)
-- Parsers (vixen)
-and offers them in one consistent rust offering.
+**code snapshot date: May 9, 2025**
 
-## The Challenge
-Solana has a lot of great rust crates to get you going. The issue is when you want to combine the services from one vendors SDK with that from another. On top of that, getting the correct dependincies in place across the solana-xxx and spl-xxx crates adds another layer of complexity. qtrade2 has done the hard work of methodically layering in many populer Solana vendors SDKs and migrating them to a consistent offering with the base solana-xxx crate set at the 2.x level.
+# Welcome to qtrade
+*A full stack crypto arbitrage solution - streaming infra, optimization engine, transaction builder, monitoring with Datadog and OpenTelemetry, and hybrid deployment via Ansible and GitHub Actions.*
 
-## How it's done
-qtrade2 starts with the upcoming version of anchor (0.31) - pulled from anchor's main branch. This is used as the starter set of solana-xxx and spl-xxx crates to use. Then, each vendors SDK is layered in, upgrading and modifying the code as necessary to adhere to the standard set of crate versions set with anchor.
+For more information, check out the [documentation](https://808putnam.gitbook.io/qtrade2).
+
+## streaming infra
+At the core of *qtrade* is a custom bare-metal Solana RPC node, enhanced with a Yellowstone Geyser plugin to enable high-throughput data streaming. Real-time liquidity data from Raydium and Orca is captured and ingested using Yellowstone Vixen, which models DEX pool reserves with sub-second latency—laying the groundwork for accurate and timely arbitrage opportunities.
+
+## optimization engine
+*qtrade*'s optimization layer bridges Rust performance with Python flexibility, using a hybrid CVXPY-based solver. Cached DEX pool reserves are streamed into the engine in near real-time, where the solver computes optimal arbitrage routes across multiple pools and tokens—maximizing profit potential while accounting for slippage, fees, and execution constraints.
+
+## transaction builder
+*qtrade* ensures precise and reliable executions by orchestrating transactions across six distinct RPC providers. Using Solana Nonce accounts, the system guarantees atomicity—ensuring that only one RPC provider will succeed in placing the transaction.
+
+## monitoring with Datadog and OpenTelemetry
+*qtrade* employs comprehensive monitoring through Datadog and OpenTelemetry to ensure system reliability and performance. Key metrics track the health of the RPC node, the Yellowstone Geyser plugin, and the status of DEX pool reserves and transactions. Additionally, base-level infrastructure monitoring provides insights into CPU usage, container performance, and system health, ensuring continuous uptime and optimal operation.
+
+## hybrid deployment via Ansible and GitHub Actions
+*qtrade*'s deployment is automated using a combination of GitHub Actions and Ansible. GitHub Actions orchestrate the entire deployment pipeline, ensuring seamless integration and continuous delivery. Ansible handles the configuration and provisioning of services, enabling consistent and scalable deployments across environments with minimal manual intervention.
+
+## welcome developers!
+
+*Launch the qtrade Codespace to get started.*

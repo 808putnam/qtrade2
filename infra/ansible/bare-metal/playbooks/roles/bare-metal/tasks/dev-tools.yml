@@ -1,0 +1,96 @@
+# Notes
+# 1. install_user var is set in task below
+# 2. nodejs_version is set in vars/main.yml
+
+- name: Append MC1_JSON environment variable to .bashrc for ubuntu user
+  become: true
+  lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MC1_JSON="{{ bare_metal_mc1_json }}"'
+    create: yes
+    owner: ubuntu
+    mode: 0644
+
+- name: Check if ec2-user exists
+  ansible.builtin.command: id -u ec2-user
+  register: ec2_user_exists
+  ignore_errors: true
+  changed_when: false
+
+- name: Set user variable
+  ansible.builtin.set_fact:
+    install_user: "{{ 'ec2-user' if ec2_user_exists.rc == 0 else 'ubuntu' }}"
+
+- name: Download and install NVM
+  ansible.builtin.shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become_user: "{{ install_user }}"
+
+- name: Source NVM in the current session
+  ansible.builtin.shell: echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc && echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become_user: "{{ install_user }}"
+
+- name: Load NVM
+  ansible.builtin.shell: . "$HOME/.nvm/nvm.sh"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become_user: "{{ install_user }}"
+
+- name: Install Node.js version from vars using NVM
+  ansible.builtin.shell: . "$HOME/.nvm/nvm.sh" && nvm install {{ nodejs_version }}
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become_user: "{{ install_user }}"
+
+- name: Verify Node.js version
+  ansible.builtin.shell: . "$HOME/.nvm/nvm.sh" && node -v
+  args:
+    executable: /bin/bash
+  register: node_version
+  changed_when: false
+  become_user: "{{ install_user }}"
+
+- name: Print Node.js version
+  ansible.builtin.debug:
+    msg: "Node.js version installed: {{ node_version.stdout }}"
+
+- name: Create a symlink for node in /usr/bin
+  ansible.builtin.file:
+    src: "/home/{{ install_user }}/.nvm/versions/node/{{ node_version.stdout }}/bin/node"
+    dest: "/usr/bin/node"
+    state: link
+    force: yes
+  become_user: root
+  become: true
+
+- name: Create a symlink for npm in /usr/bin
+  ansible.builtin.file:
+    src: "/home/{{ install_user}}/.nvm/versions/node/{{ node_version.stdout }}/bin/npm"
+    dest: "/usr/bin/npm"
+    state: link
+  become_user: root
+  become: true
+
+- name: Verify npm version
+  ansible.builtin.shell: . "$HOME/.nvm/nvm.sh" && npm -v
+  args:
+    executable: /bin/bash
+  register: npm_version
+  changed_when: false
+  become_user: "{{ install_user }}"
+
+- name: Print npm version
+  ansible.builtin.debug:
+    msg: "npm version installed: {{ npm_version.stdout }}"
+
+- name: Install wscat
+  community.general.npm:
+    name: wscat
+    global: true

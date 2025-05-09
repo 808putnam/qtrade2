@@ -1,0 +1,15 @@
+postgres_args: "TODO"
+postgres_detach_opt: true
+postgres_docker_name: "postgres"
+postgres_image: "postgres:{{ postgres_image_version }}"
+# defined in .github/workflows/postgres.yml
+postgres_image_version: "{{ postgres_version }}"
+postgres_log_driver: "json-file"
+postgres_log_maxfile: "20"
+postgres_log_maxsize: "20m"
+postgres_mem: "1g"
+postgres_restart_opt: "unless-stopped"
+postgres_runtime_opt: "runc"
+# postgres_volumes: "TODO"
+# postgres_public_ip: "{{ ansible_host }}"
+# postgres_workdir: "/app/xxx"

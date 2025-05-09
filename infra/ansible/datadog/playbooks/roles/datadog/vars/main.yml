@@ -1,0 +1,28 @@
+datadog_api_key: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          65376535666135366535313466623663343834646139343931643766306261666661356139303066
+          6531316334373432346364363935346135633234353665370a383137353839393131376363356230
+          34316262306434316162393631653439323435353937333461663066626336653962646539393062
+          3633306466653064630a396433366663653633373061366166353366643665656137623530643066
+          33306438323037396131323132396261333434393665363533306363653638656366383963376361
+          3338393561303032396435636532653734373436316362343130
+
+datadog_detach_opt: true
+datadog_docker_name: "opentelemetry-collector"
+datadog_docker_user: "808putnam"
+datadog_image: "otel/opentelemetry-collector-contrib:{{ datadog_image_version }}"
+# defined in .github/workflows/datadog.yml
+datadog_image_version: "{{ otel_version }}"
+datadog_log_driver: "json-file"
+datadog_log_maxfile: "20"
+datadog_log_maxsize: "20m"
+datadog_mem: "1g"
+datadog_ports:
+  - 4317:4317
+  - 4318:4318
+datadog_restart_opt: "unless-stopped"
+datadog_runtime_opt: "runc"
+datadog_volumes: "/etc/otelcol-contrib/otel-collector-config-testnet.yml:/etc/otelcol-contrib/config.yaml"
+# datadog_command_args: "--regions {{ regions }} --loglevel {{ log_level }}"
+# datadog_public_ip: "{{ ansible_host }}"
+# datadog_workdir: "/app/xxx"

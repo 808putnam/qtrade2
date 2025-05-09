@@ -1,0 +1,53 @@
+- name: Pull image
+  community.docker.docker_image:
+    name: "{{ postgres_image }}"
+    source: pull
+    debug: true
+  become: true
+  become_user: root
+
+- name: Execute Docker run command
+  community.docker.docker_container:
+    name: "{{ postgres_docker_name }}"
+    env: >
+      {{
+        {
+          'POSTGRES_USER': 'qtrade',
+          'POSTGRES_PASSWORD': 'password',
+          'POSTGRES_DB': 'qtrade'
+        }
+      }}
+    networks:
+      - name: otel_network
+    hostname: "{{ ansible_hostname }}"
+    pull: true
+    log_driver: "{{ postgres_log_driver }}"
+    log_options:
+      max-size: "{{ postgres_log_maxsize }}"
+      max-file: "{{ postgres_log_maxfile }}"
+    runtime: "{{ postgres_runtime_opt }}"
+    restart_policy: "{{ postgres_restart_opt }}"
+    memory: "{{ postgres_mem }}"
+    detach: "{{ postgres_detach_opt }}"
+    image: "{{ postgres_image }}"
+  become: true
+  become_user: root
+
+- name: Prune everything
+  become: true
+  become_user: "root"
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
+    containers: true
+    containers_filters:
+      # only consider containers created more than 72 hours ago
+      until: 72h
+    volumes: true
+    networks: true
+  register: prune_result
+
+- name: Show prune result
+  ansible.builtin.debug:
+    var: prune_result

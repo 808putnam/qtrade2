@@ -1,0 +1,28 @@
+- name: Register SSH host keys
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Accept EC2 SSH host keys
+      connection: local
+      become: false
+      ansible.builtin.shell: |
+        ssh-keygen -F {{ ansible_host }} ||
+          ssh-keyscan -H {{ ansible_host }} >> ~/.ssh/known_hosts
+      register: known_hosts_script
+      changed_when: "'found' not in known_hosts_script.stdout"
+  tags: always
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+- name: Provision agave
+  hosts: all
+  remote_user: "{{ remote_user }}"
+  become: true
+  become_method: ansible.builtin.sudo
+  become_flags: "su -c"
+  gather_facts: true
+  tasks:
+    - name: Import agave role
+      ansible.builtin.import_role:
+        name: agave

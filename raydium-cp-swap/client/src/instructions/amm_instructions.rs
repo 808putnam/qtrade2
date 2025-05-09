@@ -10,7 +10,9 @@ use raydium_cp_swap::{
 };
 use std::rc::Rc;
 
-use super::super::{read_keypair_file, ClientConfig};
+// qtrade: migrating ClientConfig to instructions for dual bin/lib build
+// use super::super::{read_keypair_file, ClientConfig};
+use super::{read_keypair_file, ClientConfig};
 
 pub fn initialize_pool_instr(
     config: &ClientConfig,

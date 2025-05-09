@@ -1,0 +1,27 @@
+# ignore build info
+*.egg-info/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment folders
+env/
+venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Distribution/build artifacts
+build/
+dist/
+*.egg
+*.egg-info/
+*.manifest
+*.spec
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp

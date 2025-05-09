@@ -1,0 +1,136 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'call_julia'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=call_julia",
+                    "--package=examples"
+                ],
+                "filter": {
+                    "name": "call_julia",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'call_julia'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=call_julia",
+                    "--package=examples"
+                ],
+                "filter": {
+                    "name": "call_julia",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'qtrade-router'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=qtrade-router"
+                ],
+                "filter": {
+                    "name": "qtrade-router",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'replay-engine'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=replay-engine"
+                ],
+                "filter": {
+                    "name": "replay-engine",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'whirlpool-replayer'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=whirlpool-replayer"
+                ],
+                "filter": {
+                    "name": "whirlpool-replayer",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'whirlpool-replay'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=whirlpool-replay",
+                    "--package=whirlpool-replay"
+                ],
+                "filter": {
+                    "name": "whirlpool-replay",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'whirlpool-replay'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=whirlpool-replay",
+                    "--package=whirlpool-replay"
+                ],
+                "filter": {
+                    "name": "whirlpool-replay",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

@@ -1,19 +1,146 @@
-use itertools::Itertools;
-use ndarray::{array, Array1, Array2};
-use std::cmp::Ordering;
+use ndarray::{array, Array2};
 use pyo3::prelude::*;
-use pyo3::types::IntoPyDict;
-use pyo3::ffi::c_str;
 use pyo3::types::PyDict;
+use pyo3::types::PyAny;
+use pyo3::types::PyList;
+use serde::{Serialize, Deserialize};
+use spl_pod::solana_pubkey::Pubkey;
 
-pub fn run() {
-    println!("Hello, world!");
-    // The function to launch threads, services and anything else.
-    // qtrade-client does bare minimum to launch and then calls the
-    // run() function, passing in any parameters it received.
+// Define a type alias for the pool entries
+pub type PoolEntry = (Pubkey, Box<dyn std::any::Any + Send + Sync>);
+
+/// Result of the arbitrage optimization calculation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArbitrageResult {
+    /// Delta values (tender amounts) for each pool
+    pub deltas: Vec<Vec<f64>>,
+    /// Lambda values (receive amounts) for each pool
+    pub lambdas: Vec<Vec<f64>>,
+    /// A-matrix that maps global to local indices
+    pub a_matrices: Vec<Vec<Vec<f64>>>,
+    /// Status of the optimization problem
+    pub status: String,
 }
 
-pub fn solve() -> Result<(), Box<dyn std::error::Error>> {
+pub fn solve(pool_entries: &[PoolEntry]) -> Result<ArbitrageResult, Box<dyn std::error::Error>> {
+    println!("Received {} pool entries for solving", pool_entries.len());
+
+    let result = Python::with_gil(|py| -> PyResult<ArbitrageResult> {
+        let qtrade = PyModule::import(py, "qtrade.arbitrage.core")?;
+
+        // Problem data
+        let global_indices = vec![0, 1, 2, 3];
+        let local_indices = vec![
+            vec![0, 1, 2, 3],
+            vec![0, 1],
+            vec![1, 2],
+            vec![2, 3],
+            vec![2, 3],
+        ];
+        let reserves = vec![
+            vec![4.0, 4.0, 4.0, 4.0],
+            vec![10.0, 1.0],
+            vec![1.0, 5.0],
+            vec![40.0, 50.0],
+            vec![10.0, 10.0],
+        ];
+        let fees = vec![0.998, 0.997, 0.997, 0.997, 0.999];
+        let market_value = vec![1.5, 10.0, 2.0, 3.0];
+
+        // Convert Rust data to Python objects
+        let py_global_indices = PyList::new(py, &global_indices)?;
+        let py_local_indices = PyList::new(py, &local_indices)?;
+
+        let py_reserves: Vec<_> = reserves
+            .iter()
+            .map(|r| PyList::new(py, r))
+            .collect::<Result<Vec<_>, _>>()?;
+        let py_reserves_list = PyList::new(py, &py_reserves)?;
+
+        let py_fees = PyList::new(py, &fees)?;
+        let py_market_value = PyList::new(py, &market_value)?;
+
+        // Call the Python function with positional arguments
+        let args = (
+            py_global_indices,
+            py_local_indices,
+            py_reserves_list,
+            py_fees,
+            py_market_value,
+        );
+        let inner_result = qtrade.call_method("solve_arbitrage", args, None)?;
+
+        // Extract results from the Python function
+        let (prob, deltas, lambdas, a): (Bound<'_, PyAny>, Bound<'_, PyList>, Bound<'_, PyList>, Bound<'_, PyList>)
+            = inner_result.extract()?;
+
+        // Print results for debugging
+        println!("Optimization problem status: {:?}", prob.getattr("status")?);
+
+        // Convert PyList objects to Rust vectors
+        let deltas_vec: Vec<Vec<f64>> = deltas
+            .iter()
+            .map(|delta_list| {
+                let delta_py_list = delta_list.downcast::<PyList>().unwrap();
+                delta_py_list.iter()
+                    .map(|val| val.extract::<f64>().unwrap())
+                    .collect::<Vec<f64>>()
+            })
+            .collect();
+
+        let lambdas_vec: Vec<Vec<f64>> = lambdas
+            .iter()
+            .map(|lambda_list| {
+                let lambda_py_list = lambda_list.downcast::<PyList>().unwrap();
+                lambda_py_list.iter()
+                    .map(|val| val.extract::<f64>().unwrap())
+                    .collect::<Vec<f64>>()
+            })
+            .collect();
+
+        let a_vec: Vec<Vec<Vec<f64>>> = a
+            .iter()
+            .map(|a_matrix| {
+                let a_matrix_py_list = a_matrix.downcast::<PyList>().unwrap();
+                a_matrix_py_list.iter()
+                    .map(|row| {
+                        let row_py_list = row.downcast::<PyList>().unwrap();
+                        row_py_list.iter()
+                            .map(|val| val.extract::<f64>().unwrap())
+                            .collect::<Vec<f64>>()
+                    })
+                    .collect::<Vec<Vec<f64>>>()
+            })
+            .collect();
+
+        println!("Converted deltas: {:?}", deltas_vec);
+        println!("Converted lambdas: {:?}", lambdas_vec);
+        println!("Converted matrix A: {:?}", a_vec);
+
+        // Get the optimization problem status
+        let status = prob.getattr("status")?.extract::<String>()?;
+
+        // Create and return the arbitrage result
+        let arbitrage_result = ArbitrageResult {
+            deltas: deltas_vec,
+            lambdas: lambdas_vec,
+            a_matrices: a_vec,
+            status,
+        };
+
+        Ok(arbitrage_result)
+    });
+
+    match &result {
+        Ok(res) => println!("solve_arbitrage executed successfully with status: {}", res.status),
+        Err(e) => println!("Error executing solve_arbitrage: {}", e),
+    }
+
+    // Convert PyResult<ArbitrageResult> to Result<ArbitrageResult, Box<dyn std::error::Error>>
+    result.map_err(|e| e.into())
+}
+
+pub fn solve2() -> Result<(), Box<dyn std::error::Error>> {
     let result = Python::with_gil(|py| -> PyResult<()> {
         /*
         let sys = py.import("sys")?;
@@ -71,7 +198,7 @@ pub fn solve() -> Result<(), Box<dyn std::error::Error>> {
             a.push(a_i);
         }
 
-    
+
         // Build variables
 
         /*
@@ -139,8 +266,8 @@ pub fn solve() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 
     /*
-    
-    
+
+
     // Objective is to maximize "total market value" of coins out
     let obj = market_value.iter().zip(&psi).map(|(m, p)| m * p).sum::<f64>();
 

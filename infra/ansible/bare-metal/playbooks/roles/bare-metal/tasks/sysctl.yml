@@ -1,0 +1,16 @@
+# Notes:
+# 1. References
+#    https://docs.anza.xyz/operations/setup-a-validator/#system-tuning
+
+# - name: Set sysctl parameters #https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes#non-bsd
+#   become: true
+#   become_user: root
+#   ansible.builtin.sysctl:
+#     name: "{{ item.name }}"
+#     value: "{{ item.value }}"
+#     state: present
+#   loop:
+#     - { name: 'net.core.rmem_max', value: '7500000' }
+#     - { name: 'net.core.wmem_max', value: '7500000' }
+#   tags:
+#   - sysctl

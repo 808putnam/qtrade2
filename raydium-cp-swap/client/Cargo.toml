@@ -5,6 +5,14 @@ version = "0.1.0"
 # rust-version = "1.75.0"
 edition.workspace = true
 
+[[bin]]
+name = "raydium-cp-swap-client"
+path = "src/main.rs"
+
+[lib]
+name = "raydium_cp_swap_client"
+path = "src/lib.rs"
+
 [dependencies]
 anchor-client = { path = "../../anchor/client" }
 anchor-lang = { path = "../../anchor/lang" }

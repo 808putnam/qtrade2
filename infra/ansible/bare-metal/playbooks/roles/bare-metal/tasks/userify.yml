@@ -1,0 +1,36 @@
+# Notes:
+# 1. userify_api_id and userify_api_key are set in vars/main.yml
+
+- name: Check if Userify Agent is already installed
+  ansible.builtin.stat:
+    path: /opt/userify/
+  register: agent_installed
+
+- name: Install Userify Agent
+  shell: |
+    curl -1 -sS "https://static.userify.com/installer.sh" | \
+    static_host="static.userify.com" \
+    shim_host="configure.userify.com" \
+    company_name="solon" \
+    project_name="prod" \
+    self_signed=0 \
+    api_id="{{ userify_api_id }}" \
+    api_key="{{ userify_api_key }}" \
+  when: "not agent_installed.stat.exists"
+  # TODO: This was previous test
+  # when: "not agent_installed.stdout"
+
+# For reference, original
+# - name: Install Userify
+#   shell: |
+#     curl -1 -sS "https://static.userify.com/installer.sh" | \
+#     api_key="{{ userify_api }}" \
+#     api_id="{{ userify_id }}" \
+#     company_name="solon" \
+#     project_name="mainnet" \
+#     static_host="static.userify.com" \
+#     shim_host="configure.userify.com" \
+#     self_signed=0 \
+#     sudo -s -E
+#   ignore_errors: true # in case pipeline needs to be ran again, this will prevent it from failing due to shim error
+#   no_log: true

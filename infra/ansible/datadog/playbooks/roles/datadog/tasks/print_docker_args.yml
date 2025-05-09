@@ -1,0 +1,12 @@
+# References:
+# 1. assaflavie/runlike
+#    Given a container, runlike will print out the appropriate command to run another one like it.
+#    https://hub.docker.com/r/assaflavie/runlike/
+- name: Get current args
+  ansible.builtin.shell: sudo su -l ec2-user -c "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock assaflavie/runlike {{ datadog_docker_name }}"
+  register: curr_args
+  ignore_errors: true
+
+- name: Show Current Args
+  ansible.builtin.debug:
+    msg: "{{ curr_args.stdout }}"

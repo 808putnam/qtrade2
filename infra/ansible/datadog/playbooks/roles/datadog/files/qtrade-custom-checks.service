@@ -1,0 +1,30 @@
+[Unit]
+# Description of the service
+Description=QTrade Custom Checks Service
+
+# Ensure the service starts only after the network is up
+After=network.target
+
+[Service]
+# Command to start the service
+ExecStart=/home/ubuntu/dev/qtrade/target/debug/qtrade-custom-checks
+
+# Directory where the service will run
+WorkingDirectory=/home/ubuntu/dev/qtrade
+
+# Restart the service automatically if it crashes
+Restart=always
+
+# Run the service as the 'ubuntu' user
+User=ubuntu
+
+# Set environment variables for the service
+# LOG_LEVEL sets the logging level for the application
+Environment="LOG_LEVEL=info"
+
+# PATH ensures the service can find required binaries, including Solana CLI
+Environment="PATH=/home/ubuntu/.local/share/solana/install/active_release/bin:/home/ubuntu/.local/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.nvm/versions/node/v22.14.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+[Install]
+# Specify that this service should start in multi-user mode
+WantedBy=multi-user.target

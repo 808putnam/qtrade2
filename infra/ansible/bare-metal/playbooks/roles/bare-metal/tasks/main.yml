@@ -1,0 +1,29 @@
+- name: Update and upgrade server packages
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Install userify
+  ansible.builtin.import_tasks: userify.yml
+
+# TODO: Why is fail2ban failing?
+# - name: Install fail2ban
+#   ansible.builtin.import_tasks: fail2ban.yml
+
+- name: Password Authentication Disable
+  ansible.builtin.import_tasks: password-authentication.yml
+
+# TODO: Once a Wazuh Manager is deployed, uncomment the following lines
+#       https://documentation.wazuh.com/current/installation-guide/wazuh-server/index.html
+# - name: Add Wazuh Agent
+#   ansible.builtin.import_tasks: wazuh-agent.yml
+
+- name: Create ec2-user
+  ansible.builtin.import_tasks: add-ec2-user.yml
+  when: add_ec2_user | default(false) | bool
+  tags:
+    - ec2-user
+
+- name: Install docker
+  ansible.builtin.import_tasks: docker.yml
+
+- name: Install dev tool suite
+  ansible.builtin.import_tasks: dev-tools.yml

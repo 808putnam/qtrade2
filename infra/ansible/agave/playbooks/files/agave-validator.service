@@ -1,0 +1,40 @@
+[Unit]
+# A short description of the service
+Description=Agave Validator Service
+
+# Specifies that this service should start only after the network is up
+After=network.target
+
+# Disables rate limiting for service restarts
+# allowing the service to restart without restriction.
+StartLimitIntervalSec=0
+
+[Service]
+# Specifies that the service is a simple process that starts directly with the specified ExecStart command
+# systemd considers the service started as soon as the process is launched
+Type=simple
+
+# Ensures the service will always restart if it stops
+Restart=always
+
+# Specifies the delay (in seconds) before restarting the service after it stops
+RestartSec=1
+
+# Specifies the user under which the service will run
+User=ubuntu
+
+# Sets the maximum number of open file descriptors for the service
+LimitNOFILE=1000000
+
+# Disables rate limiting for log messages, allowing logs to be written without restriction
+LogRateLimitIntervalSec=0
+
+# PATH ensures the service can find required binaries, including Solana CLI
+Environment="PATH=/home/ubuntu/.local/share/solana/install/active_release/bin:/home/ubuntu/.local/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.nvm/versions/node/v22.14.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# The command to start the service
+ExecStart=/home/ubuntu/scripts/rpc.sh
+
+[Install]
+# Specifies that the service should be started in multi-user mode
+WantedBy=multi-user.target

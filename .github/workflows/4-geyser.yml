@@ -1,0 +1,46 @@
+name: 4. geyser
+
+on:
+  workflow_dispatch:
+    inputs:
+      host:
+        description: 'The IP address of the host to deploy to'
+        required: true
+        type: string
+        default: '160.202.128.177'
+      version:
+        description: 'What version of rust?'
+        required: true
+        type: string
+        default: '1.84.1'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up SSH key and test connection
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.QTRADE_LATITUDE_SSH_PRIVATE_KEY }}" > ~/.ssh/github-actions
+          chmod 600 ~/.ssh/github-actions
+
+          ssh-keyscan -t rsa,dsa,ecdsa,ed25519 ${{ github.event.inputs.host }} >> ~/.ssh/known_hosts
+
+          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/github-actions ubuntu@${{ github.event.inputs.host }} "echo 'SSH successful'"
+
+      - name: Set up Vault password file
+        run: |
+          mkdir -p  ~/.vault
+
+          echo "${{ secrets.ANSIBLE_VAULT_PASS }}" > ~/.vault/ANSIBLE_VAULT_PASS_FILE
+          chmod 600 ~/.vault/ANSIBLE_VAULT_PASS_FILE
+
+      - name: Run Ansible playbook with SSH options
+        run: |
+          export ANSIBLE_SSH_ARGS="-o StrictHostKeyChecking=no"
+          ansible-playbook geyser.yml -i ${{ github.event.inputs.host }}, -e rust_version=${{ github.event.inputs.version }} -e remote_user=ubuntu --private-key ~/.ssh/github-actions --vault-password-file ~/.vault/ANSIBLE_VAULT_PASS_FILE -e ansible_python_interpreter=/usr/bin/python3
+        working-directory: infra/ansible/geyser/playbooks

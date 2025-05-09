@@ -1,0 +1,23 @@
+# Notes:
+# Currently not used as we have an alternative approach for this in infra/ansible/bare-metal/roles/bare-metal/tasks/password_authentication.yml
+- name: Ensure PasswordAuthentication is set to no in /etc/ssh/sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: restart sshd
+
+- name: Check if /etc/ssh/sshd_config.d/50-cloud-init.conf exists
+  ansible.builtin.stat:
+    path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+  register: cloud_init_conf
+
+- name: Ensure PasswordAuthentication is set to no in /etc/ssh/sshd_config.d/50-cloud-init.conf
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config.d/50-cloud-init.conf
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  when: cloud_init_conf.stat.exists
+  notify: restart sshd

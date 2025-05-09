@@ -1,0 +1,16 @@
+{
+    "python.terminal.activateEnvironment": true,
+    
+    // References
+    "terminal.integrated.gpuAcceleration": "off",
+    "ansible.python.interpreterPath": "/root/.pyenv/versions/3.12.0/bin/python",
+
+    // Allows navigation from arbitrage.py to cvxpy definitions
+    // commenting out for now
+    // "python.autoComplete.extraPaths": [
+    //     "${workspaceFolder}/cvxpy"
+    // ],
+    // "python.analysis.extraPaths": [
+    //     "${workspaceFolder}/cvxpy"
+    // ]
+}

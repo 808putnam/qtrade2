@@ -1,0 +1,12 @@
+# Notes:
+# 1. group_names
+#    List of groups the current host is part of,
+#    it always reflects the inventory_hostname and ignores delegation.
+#    Reference: https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#term-group_names
+- name: Assign region variable
+  ansible.builtin.set_fact:
+    region: "{{ group_names[0] }}"
+
+- name: Display region variable
+  ansible.builtin.debug:
+    var: region

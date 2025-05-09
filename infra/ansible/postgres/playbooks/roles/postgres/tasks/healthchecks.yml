@@ -1,0 +1,26 @@
+- name: Get newly started container info
+  docker_container_info:
+    name: "{{ postgres_docker_name }}"
+  register: newly_started_containers
+  become: true
+  become_user: root
+
+- name: Wait before checking container health
+  ansible.builtin.pause:
+    seconds: 1
+
+- name: Check if the container is restarting
+  ansible.builtin.shell: "docker logs {{ postgres_docker_name }} --tail 100"
+  when: newly_started_containers.container.State.Status == 'restarting'
+  register: container_restarting
+  become: true
+  become_user: root
+
+- name: Print conditional
+  ansible.builtin.debug:
+    msg: "{{ newly_started_containers.container.State.Status }}"
+
+- name: Print container error log
+  ansible.builtin.fail:
+    msg: "{{ container_restarting.stderr }}"
+  when: container_restarting.changed == true

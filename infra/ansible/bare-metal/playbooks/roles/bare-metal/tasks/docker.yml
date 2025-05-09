@@ -1,0 +1,54 @@
+- name: Add ec2-user user to the docker group
+  ansible.builtin.user:
+    name: ec2-user
+    groups: docker
+    append: true
+  when: add_ec2_user | default(false) | bool
+
+# TODO: Adding the ubuntu user to the docker group for now
+- name: Add ubuntu user to the docker group
+  ansible.builtin.user:
+    name: ubuntu
+    groups: docker
+    append: true
+  # when: not (add_ec2_user | default(false) | bool)
+
+- name: Ensure /etc/docker directory exists
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+# Setting `"iptables": false` in Docker's `daemon.json` is generally **not recommended**,
+# even if you're using UFW (Uncomplicated Firewall). Here's why:
+# How Docker and UFW Interact
+# 1. Default Behavior (`iptables: true`):
+#    - By default, Docker modifies `iptables` rules to manage container networking (e.g., NAT for outbound traffic, port forwarding, etc.).
+#    - UFW works alongside Docker's `iptables` rules, but sometimes conflicts can arise because UFW doesn't automatically account for Docker's rules.
+#
+# 2. When `iptables: false` is Set:
+#    - Docker stops managing `iptables` rules entirely.
+#    - This means:
+#      - Containers lose outbound internet access unless you manually configure `iptables` or UFW rules to allow it.
+#      - Port mappings (e.g., `-p 8080:80`) won't work unless explicitly handled in UFW or `iptables`.
+#
+# Should You Use `iptables: false` with UFW?
+# - No, unless you are prepared to manually manage all the necessary `iptables` rules for Docker networking.
+# - Instead, you can configure UFW to work with Docker's default behavior (`iptables: true`) by allowing Docker traffic explicitly.
+- name: Add daemon.json configuration
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "iptables": true
+      }
+    mode: '0644'
+  notify: Restart Docker
+
+# TODO: Do we need this?
+# - name: Add dd-agent user to the docker group
+#   user:
+#     name: dd-agent
+#     groups: docker
+#     append: yes
+#   notify: Restart Docker

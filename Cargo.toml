@@ -11,8 +11,9 @@ members = [
     "orca/macros",
     "pyth/pyth-sdk",
     "pyth/pyth-sdk-solana",
-    "qtrade",
+    "qtrade-runtime",
     "qtrade-client",
+    "qtrade-custom-checks",
     "qtrade-solver",
     "qtrade-streamer",
     "raydium-clmm/client",
@@ -82,6 +83,8 @@ borsh-derive-internal = "0.10.3"
 # yellowstone-vixen-core => 0.5.1
 # yellowstone-vixen-parser => 0.5.1
 bs58 = "0.5"
+# qtrade-runtime => 0.4
+chrono = "0.4"
 # anchor-lang => 1
 # raydium_cp_swap => 1.4.0
 # raydium_amm_v3 => 1.19.0, features = ["derive", "min_const_generics"]
@@ -102,6 +105,8 @@ colorful = "0.2.2"
 # raydium_cp_swap_client => 3.0.0
 # raydium_amm_v3_client => 3.0.0
 configparser = "3.0.0"
+# qtrade
+dashmap = "6.1.0"
 # solana-trader-client-rust => 0.15
 dotenv = "0.15"
 # solana-trader-client-rust => 0.11.5
@@ -135,6 +140,9 @@ js-sys = { version = "0.3" }
 lazy_static = "1.5.0"
 # orca_whirlpools_core => ^0.1
 libm = { version = "0.1" }
+# qtrade-client
+# qtrade-runtime
+log = { version = "0.4.22", features = ["kv"] }
 # anchor-spl => 5
 # raydium_amm_v3 => ^1.11.0
 # raydium_amm_v3_client => ^1.11.0
@@ -147,8 +155,22 @@ num-derive = { version = "0.4" }
 # orca_whirlpools_client => ^0.2
 # pyth-sdk-solana => 0.2
 num-traits = { version = "0.2" }
+# qtrade-client
+# qtrade-runtime
+once_cell = "1.13"
 # yellowstone-vixen => 0.24.0
-opentelemetry = { version = "0.24.0" }
+# qtrade-client
+opentelemetry = { version = "0.28.0", features = ["metrics", "logs"] }
+# qtrade-client
+opentelemetry-appender-tracing = { version = "0.28.0", default-features = false }
+# qtrade-client
+opentelemetry-otlp = { version = "0.28.0", features = ["grpc-tonic"] }
+# qtrade-client
+opentelemetry-resource-detectors = "0.7.0"
+# qtrade-client
+opentelemetry_sdk = { version = "0.28.0", features = ["rt-tokio", "logs"] }
+# qtrade-client
+opentelemetry-semantic-conventions = { version = "0.28.0" }
 # yellowstone-vixen => 0.2.14
 pin-project-lite = { version = "0.2.14" }
 # anchor-attribute-access-control, anchor-attribute-account,
@@ -178,7 +200,7 @@ pyo3 = { version = "0.23.1", features = ["auto-initialize"] }
 quickcheck = "0.9"
 # pyth-sdk => 1
 quickcheck_macros = "0.9"
-# anchor-attribute-access-control, anchor-attribute-account, 
+# anchor-attribute-access-control, anchor-attribute-account,
 # anchor-attribute-constant, anchor-attribute-error
 # anchor-attribute-event, anchor-attribute-program
 # anchor-derive-accounts, anchor-derive-serde,
@@ -206,7 +228,7 @@ rustls = { version = "0.23.16", features = ["ring"] }
 schemars = "0.8.8"
 # anchor-lang-idl-spec, anchor-lang-idl
 # anchor-syn = 1
-# orca_whirlpools_core, orca_whirlpools_client 
+# orca_whirlpools_core, orca_whirlpools_client
 # anchor-client => ^1
 # raydium_cp_swap_client => 1.0
 # raydium_amm_v3_client => 1.0
@@ -234,6 +256,8 @@ serde_with = { version = "3.10" }
 serial_test = "3.1.1"
 # anchor-lang-idl, anchor-syn => 0.10
 sha2 = { version = "0.10" }
+# qtrade
+simplelog = "0.11"
 # yellowstone-vixen => 0.13.2
 smallvec = "1.13.2"
 # orca_whirlpools_client => ^1.17
@@ -244,7 +268,7 @@ smallvec = "1.13.2"
 # 1. Updated to 2.1 due to pulling in spl-pod 0.5.0
 # 2. Also, had to add in patch (see below) for zeroize bug
 solana-account-decoder = "2.1"
-# orca_whirlpools_client => ^1.17 
+# orca_whirlpools_client => ^1.17
 # anchor-client => 2
 # raydium_cp_swap_client >=1.14, <1.17
 # raydium_amm_v3_client => >=1.14, <1.17
@@ -302,10 +326,11 @@ spl-math = { version = "0.2", features = ["no-entrypoint"] }
 # raydium_amm_v3_client => 4.0.0
 spl-memo = { version = "6", features = ["no-entrypoint"] }
 # anchor-spl => 0.5
+# qtrade-solver
 # yellowstone-vixen-parser => 0.3.0
 spl-pod = { version = "0.5.0" }
 # anchor-spl => 7
-# raydium_cp_swap => 4.0.0 
+# raydium_cp_swap => 4.0.0
 # raydium_cp_swap_client => 4.0.0
 # raydium_amm_v3_client => 4.0.0
 # yellowstone-vixen-parser => 6.0.0
@@ -327,7 +352,7 @@ spl-token-group-interface = { version = "0.5" }
 spl-token-metadata-interface = { version = "0.6" }
 # yellowstone-vixen-parser => 0.5.0
 spl-type-length-value = { version = "0.7.0" }
-# anchor-attribute-access-control, anchor-attribute-account, 
+# anchor-attribute-access-control, anchor-attribute-account,
 # anchor-attribute-constant, anchor-attribute-error,
 # anchor-attribute-event, anchor-attribute-program,
 # anchor-derive-accounts, anchor-derive-serde,
@@ -350,13 +375,16 @@ thiserror = "1"
 # yellowstone-vixen => 1.39.2
 # solana-trader-client-rust => 1.41.0
 # qtrade-solver => 1
-tokio = { version = "1" }
+# qtrade-client
+tokio = { version = "1", features = ["full", "rt-multi-thread"] }
 # solana-trader-client-rust => 0.26.0
 tokio-rustls = "0.26.0"
 # solana-trader-client-rust => 0.1.16
 tokio-stream = { version = "0.1.16" }
 # solana-trader-client-rust => 0.24.0
 tokio-tungstenite = { version = "0.24.0" }
+# qtrade-client
+tokio-util = "0.7.13"
 # qtrade-streamer => 0.8.12
 toml = "0.8.12"
 # yellowstone-vixen-proto => 0.12.1
@@ -375,9 +403,16 @@ tower = "0.5.1"
 # yellowstone-vixen => 0.1.40
 # solana-trader-client-rust => 0.1.40
 # qtrade-streamer => 0.1.40
-tracing = "0.1.40"
+# qtrade-client
+tracing = { version = "0.1.40", features = [ "std"] }
+# qtrade-runtime
+tracing-appender = { version = "0.2.3" }
+# qtrade-client
+tracing-core = { version = "0.1", default-features = false}
+# qtrade
 # qtrade-streamer
-tracing-subscriber = { version = "0.3.18" }
+# qtrade-client
+tracing-subscriber = { version = "0.3.18", default-features = false, features = ["env-filter","registry", "std", "fmt"] }
 # orca_whirlpools_core => ^0.4
 tsify = { version = "0.4", features = ["js"] }
 # raydium_cp_swap => 0.9.1

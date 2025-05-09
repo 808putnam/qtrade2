@@ -1,0 +1,8 @@
+- name: Install Datadog Agent
+  shell: |
+    DD_API_KEY={{ dd_api_key }} DD_SITE="datadoghq.com" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+  args:
+    executable: /bin/bash
+  become: true
+  environment:
+    DD_API_KEY: "{{ dd_api_key }}"

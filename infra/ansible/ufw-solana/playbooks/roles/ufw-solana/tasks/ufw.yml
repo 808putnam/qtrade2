@@ -1,0 +1,75 @@
+- name: Display Current UFW Status
+  become: true
+  become_user: root
+  shell: ufw status
+  register: output
+
+# Ensure SSH access is allowed before enabling UFW
+- name: Ensure SSH access is allowed
+  become: true
+  become_user: root
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+    comment: "Ensure SSH access"
+
+# When ufw is inactive, we will enable it and deny all the ports
+- name: Enable UFW
+  become: true
+  become_user: root
+  ufw:
+    state: enabled
+    policy: deny
+  when: "'inactive' in output.stdout"
+
+- name: Run UFW Generic Rules
+  become: true
+  become_user: root
+  ufw:
+    rule: "{{ item.rule }}"
+    src: "{{ item.src | default('any') }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+  with_items: "{{ all_ufw_rules }}"
+  notify: Ufw reload
+
+- name: Convert custom_ip to a list of dicts with port range
+  set_fact:
+    ip_port_dict_list: >-
+      {%- set ip_port_list = [] -%}
+      {%- for item in custom_ip.split(',') -%}
+        {%- set ip_and_ports = item.strip().rsplit(':', 2) -%}
+        {%- set ip = ip_and_ports[0] -%}
+        {%- if ip_and_ports|length == 2 -%}
+          {%- set port = ip_and_ports[1] -%}
+          {%- set _ = ip_port_list.append({'ip': ip, 'port': port}) -%}
+        {%- elif ip_and_ports|length == 3 -%}
+          {%- set start_port = ip_and_ports[1] -%}
+          {%- set end_port = ip_and_ports[2] -%}
+          {%- set port_range = start_port + ':' + end_port -%}
+          {%- set _ = ip_port_list.append({'ip': ip, 'port': port_range}) -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ip_port_list }}
+  when:
+  - custom_ip is defined
+  - custom_ip != ""
+
+- debug:
+    var: ip_port_dict_list
+
+
+- name: Allow TCP traffic from multiple IPs to multiple ports
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    from_ip: "{{ item.ip }}"
+    to_port: "{{ item.port }}"
+    comment: "custom changes by {{ remote_user }}"
+  loop: "{{ ip_port_dict_list }}"
+  when:
+  - custom_ip is defined
+  - custom_ip != ""
+  notify: Ufw reload

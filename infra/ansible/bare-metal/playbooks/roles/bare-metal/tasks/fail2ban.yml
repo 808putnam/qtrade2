@@ -1,0 +1,69 @@
+# Notes:
+# 1. fail2ban_version is set in vars/main.yml
+
+- name: Check if fail2ban is already running
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+  register: fail2ban_status
+  ignore_errors: true
+
+- block:
+  - name: Check and register python version
+    shell: python3 --version
+    register: python_version
+
+  - name: Print python_version
+    ansible.builtin.debug:
+      msg: "{{ python_version }}"
+
+  - name: Download Fail2ban source code
+    ansible.builtin.get_url:
+      url: https://github.com/fail2ban/fail2ban/archive/refs/tags/{{ fail2ban_version }}.tar.gz
+      dest: /tmp/{{ fail2ban_version }}.tar.gz
+      mode: '0644'
+
+  - name: Extract Fail2ban tarball
+    ansible.builtin.unarchive:
+      src: /tmp/{{ fail2ban_version }}.tar.gz
+      dest: /tmp/
+      remote_src: yes
+      mode: '0644'
+
+  - name: Compile Fail2ban
+    ansible.builtin.command:
+      chdir: /tmp/fail2ban-{{ fail2ban_version }}/
+      cmd: python3 setup.py build
+      creates: /tmp/fail2ban-{{ fail2ban_version }}/build
+
+  - name: Install Fail2ban
+    ansible.builtin.command:
+      chdir: /tmp/fail2ban-{{ fail2ban_version }}/
+      cmd: sudo python3 setup.py install
+      creates: /usr/local/bin/fail2ban-server
+
+  - name: Copy Fail2ban service file to systemd
+    ansible.builtin.copy:
+      src: /tmp/fail2ban-{{ fail2ban_version }}/build/fail2ban.service
+      dest: /etc/systemd/system/fail2ban.service
+      mode: '0644'
+      remote_src: true
+
+  - name: Copy fail2ban file from default to local
+    ansible.builtin.copy:
+      src: templates/fail2ban/jail.local
+      dest: /etc/fail2ban/jail.local
+    become: true
+    become_user: root
+
+  - name: Modify ExecStart in fail2ban.service
+    ansible.builtin.lineinfile:
+      path: /etc/systemd/system/fail2ban.service
+      regexp: '^ExecStart=/usr/local/bin/fail2ban-server -xf start'
+      line: 'ExecStart=/usr/bin/sudo /usr/local/bin/fail2ban-server -xf start'
+
+  - name: Reload daemon
+    ansible.builtin.systemd:
+      daemon_reload: true
+  notify: Restart fail2ban
+  when: fail2ban_status.failed or not fail2ban_status.status.ActiveState == 'active'

@@ -1,0 +1,8 @@
+{
+    "servers": {
+        "solanaMcp": {
+            "type": "sse",
+            "url": "https://mcp.solana.com/sse"
+        }
+    }
+}

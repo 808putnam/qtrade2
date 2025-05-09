@@ -1,0 +1,10 @@
+/home/ubuntu/Solana/log/solana-validator.log {
+   daily
+   rotate 4
+   compress
+   delaycompress
+   size 2G
+   missingok
+   notifempty
+   copytruncate
+}

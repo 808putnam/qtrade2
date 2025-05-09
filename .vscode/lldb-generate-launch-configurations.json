@@ -1,0 +1,98 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'call_julia'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=call_julia",
+                    "--package=examples"
+                ],
+                "filter": {
+                    "name": "call_julia",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'call_julia'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=call_julia",
+                    "--package=examples"
+                ],
+                "filter": {
+                    "name": "call_julia",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'qfmm_router_basic'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=qfmm_router_basic",
+                    "--package=examples"
+                ],
+                "filter": {
+                    "name": "qfmm_router_basic",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'qfmm_router_basic'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=qfmm_router_basic",
+                    "--package=examples"
+                ],
+                "filter": {
+                    "name": "qfmm_router_basic",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'qtrade-router'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=qtrade-router"
+                ],
+                "filter": {
+                    "name": "qtrade-router",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

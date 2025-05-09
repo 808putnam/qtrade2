@@ -1,0 +1,115 @@
+# From DataDog docs for OpenTelemetry Collector
+# https://docs.datadoghq.com/opentelemetry/collector_exporter/configuration/#step-2---configure-the-datadog-exporter-and-connector
+# ":To use the Datadog Exporter, add it to your OpenTelemetry Collector configuration.
+#  ... Use the example file which provides a basic configuration that is ready
+#  to use after you set your Datadog API key as the DD_API_KEY environment variable:"
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+  # Gain insights into your containerized environments.
+  # https://docs.datadoghq.com/opentelemetry/integrations/docker_metrics/?tab=host
+  docker_stats:
+    endpoint: unix:///var/run/docker.sock # (default)
+    metrics:
+      container.network.io.usage.rx_packets:
+        enabled: true
+      container.network.io.usage.tx_packets:
+        enabled: true
+      container.cpu.usage.system:
+        enabled: true
+      container.memory.rss:
+        enabled: true
+      container.blockio.io_serviced_recursive:
+        enabled: true
+      container.uptime:
+        enabled: true
+      container.memory.hierarchical_memory_limit:
+        enabled: true
+
+  # Gain insights into your host environments.
+  # The hostmetrics receiver is required to get correct infrastructure metrics in Datadog.
+  # https://docs.datadoghq.com/opentelemetry/integrations/host_metrics/?tab=host
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      paging:
+        metrics:
+          system.paging.utilization:
+            enabled: true
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk:
+      filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+      load:
+      memory:
+      network:
+      processes:
+
+  # Monitor the health and performance of your OpenTelemetry Collector
+  # The prometheus receiver scrapes metrics needed for the OpenTelemetry Collector Dashboard.
+  # https://docs.datadoghq.com/opentelemetry/integrations/collector_health_metrics/
+  prometheus:
+    config:
+      scrape_configs:
+      - job_name: 'otelcol'
+        scrape_interval: 10s
+        static_configs:
+        - targets: ['0.0.0.0:8888']
+
+  # https://docs.datadoghq.com/opentelemetry/collector_exporter/configuration/#step-4---configure-the-logger-for-your-application
+  filelog:
+    include_file_path: true
+    poll_interval: 500ms
+    include:
+      - /var/log/**/*example*/*.log
+
+processors:
+  # https://docs.datadoghq.com/opentelemetry/collector_exporter/collector_batch_memory/?tab=host
+  batch:
+    send_batch_max_size: 1000
+    send_batch_size: 100
+    timeout: 10s
+  # Not shown
+  # Ingestion sampling for traces
+  # https://docs.datadoghq.com/opentelemetry/ingestion_sampling_with_opentelemetry
+
+connectors:
+  # https://docs.datadoghq.com/opentelemetry/integrations/trace_metrics/
+  datadog/connector:
+
+exporters:
+  datadog/exporter:
+    api:
+      site: datadoghq.com
+      key: ${env:DD_API_KEY}
+# Add this in for troubleshooting if otel logs show submissions are timing out
+#   timeout: 120s
+
+service:
+# Add this in for troubleshooting for verbose otel logs
+# telemetry:
+#   logs:
+#     level: debug
+  pipelines:
+    metrics:
+      receivers: [hostmetrics, prometheus, otlp, datadog/connector, docker_stats]
+      processors: [batch]
+      exporters: [datadog/exporter]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [datadog/connector, datadog/exporter]
+    logs:
+      receivers: [otlp, filelog]
+      processors: [batch]
+      exporters: [datadog/exporter]

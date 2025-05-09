@@ -1,3 +1,8 @@
+# qtrade
+/.ansible/
+*.log
+*.log.20*
+
 *.c
 *.o
 *.so

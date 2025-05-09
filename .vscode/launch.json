@@ -1,0 +1,208 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Arbitrage.jl",
+            "type": "julia",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/playground/qtrade-solver/Arbitrage",
+            "juliaEnv": "${workspaceFolder}/playground/qtrade-solver/Arbitrage/Project.toml",
+            "program": "test/runtests.jl",
+            "stopOnEntry": false,
+        },
+        {
+            "name": "bx: python launch",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "solana-trader-client-python.example.provider.main",
+            "console": "integratedTerminal",
+            "env": {
+                "API_ENV": "mainnet",
+                "RUN_SLOW_STREAM": "false",
+                "RUN_TRADES": "false",
+                "AUTH_HEADER": "${env:AUTH_HEADER}",
+                "PYTHONPATH": "${env:PYTHONPATH}:${workspaceFolder}/playground/solana-trader-client-python"
+            }
+        },
+        {
+            "name": "Python: Test test_arbitrage.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/qtrade-arbitrage/tests/test_arbitrage.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "qtrade-client",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/qtrade-client",
+            "cwd": "${workspaceFolder}/qtrade-client",
+            "preLaunchTask": "cargo build qtrade-client",
+            "stopOnEntry": false,
+            "sourceLanguages": ["rust"],
+            "env": {
+                "LOG_LEVEL": "info"
+            },
+            "args": [
+                "--blockchain", "solana",
+                "--solver",     "cvxpy",
+                "--vixen",      "${workspaceFolder}/qtrade-client/config/vixen.toml",
+                "--wallet",     "${workspaceFolder}/qtrade-client/config/wallet_config.ini"
+            ],
+        },
+        {
+            "name": "qtrade-custom-checks",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/qtrade-custom-checks",
+            "cwd": "${workspaceFolder}/qtrade-custom-checks",
+            "preLaunchTask": "cargo build qtrade-custom-checks",
+            "stopOnEntry": false,
+            "sourceLanguages": ["rust"],
+            "env": {
+                "LOG_LEVEL": "info"
+            },
+            "args": [
+            ],
+        },
+        {
+            "name": "qtrade-runtime - full_lifecycle",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                // These are the args to cargo test
+                // Example: cargo test --no-run --test grpc
+                "args": [
+                    "test",
+                    // build but don't run the tests, a second step controlled by args below will run tests
+                    "--no-run",
+                    // Specify the integration tests to run
+                    "--test",
+                    // Run only integration tests (not tested yet, might need single quotes)
+                    // "*",
+                    // Run a set of integration tests (full_lifecycle, initialize, etc)
+                    "full_lifecycle",
+                    // Run a specific integration test, must be used with the name of the integration test above
+                    // "test_get_token_accounts"
+                ],
+                "filter": {
+                    "kind": "test"
+                },
+                "cwd": "${workspaceFolder}/qtrade-runtime"
+            },
+            "cwd": "${workspaceFolder}/qtrade-runtime",
+            "env": {
+                "WALLET_CONFIG_PATH": "tests/full_lifecycle/wallet_config.ini",
+                "VIXON_CONFIG_PATH": "tests/full_lifecycle/vixen.toml",
+                "BLOCKCHAIN": "solana",
+                "SOLVER": "cvxpy"
+            },
+            // These are the args after the --
+            // Example: cargo test -- --nocapture
+            // Run cargo test -- --help for more details
+            "args": [
+                // Don't capture stdout/stderr, uncomment to see output
+                "--nocapture",
+                // Run only ignored tests
+                // "--ignored",
+                // Run tests on sequentially on 1 thread
+                // "--test-threads=1",
+                // Filter out a specific test
+                // "--skip=test_xxx"
+            ]
+        },
+        {
+            "name": "qtrade-solver",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                // These are the args to cargo test
+                // Example: cargo test --no-run --test grpc
+                "args": [
+                    "test",
+                    // build but don't run the tests, a second step controlled by args below will run tests
+                    "--no-run",
+                    // Specify the integration tests to run
+                    "--test",
+                    // Run only integration tests (not tested yet, might need single quotes)
+                    // "*",
+                    // Run a set of integration tests (solve, etc)
+                    "solve",
+                    // Run a specific integration test, must be used with the name of the integration test above
+                    // "test_get_token_accounts"
+                ],
+                "filter": {
+                    "kind": "test"
+                },
+                "cwd": "${workspaceFolder}/qtrade-solver"
+            },
+            "cwd": "${workspaceFolder}/qtrade-solver",
+            "preLaunchTask": "cargo build qtrade-solver",
+            "env": {
+                "PYENV_VERSION": "system"
+            },
+            // These are the args after the --
+            // Example: cargo test -- --nocapture
+            // Run cargo test -- --help for more details
+            "args": [
+                // Don't capture stdout/stderr, uncomment to see output
+                "--nocapture",
+                // Run only ignored tests
+                // "--ignored",
+                // Run tests on sequentially on 1 thread
+                // "--test-threads=1",
+                // Filter out a specific test
+                // "--skip=test_xxx"
+            ]
+        },
+        {
+            "name": "qtrade-solver (playground): Debug unit tests",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=qtrade-solver"
+                ],
+                "filter": {
+                    "name": "qtrade-solver",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            // We'll go with the default of the qtrade-solver package root folder for now.
+            "cwd": "${workspaceFolder}/playground/qtrade-solver"
+        },
+        {
+            "name": "vixen: stream-parser launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/playground/yellowstone-vixen/target/debug/example-vixen-stream-parser",
+            "cwd": "${workspaceFolder}/playground/yellowstone-vixen",
+            "preLaunchTask": "cargo build --example stream-parser",
+            "stopOnEntry": false,
+            "sourceLanguages": ["rust"],
+            "env": {
+                "RUST_LOG": "info"
+            },
+            "args": ["--config", "${workspaceFolder}/playground/yellowstone-vixen/Vixen.toml"],
+        },
+        {
+            "name": "yellowstone: attach",
+            "type": "lldb",
+            "request": "attach",
+            "pid": "${command:pickMyProcess}", // use ${command:pickProcess} to pick other users' processes
+            "sourceLanguages": ["rust"],
+            "sourceMap": {
+                ".": "${workspaceFolder}/playground/yellowstone-grpc/yellowstone-grpc-geyser/"
+            },
+        },
+    ]
+}

@@ -1,0 +1,531 @@
+# syntax=docker/dockerfile:1
+
+# IMPORTANT: We are using ubuntu 20.04:
+# 1. Solana recommends ubuntu 20.04.
+# 2. We need an official version supported by deadsnakes ppp (see below)
+#    for python installations.
+# 3. Ubuntu 22.04 has moved to OpenSSL 3 Anchor (Solana development) requires OpenSSL 1.1.
+FROM ubuntu:20.04
+
+# TODO:
+# 1. Fix --break-system-packages for pip installs. Best practice with pip
+#    is to install into a vm? Take out --break-system-packages to see error.
+#    Latest update, we do not need this as we have dropped back to bullseye
+#    from bookworm.  We'll leave this in for now as a reminder.
+
+# IMPORTANT NOTES:
+# 1. We mostly only update the .profile file and leave the .bashrc for
+#    prompt settings, bash completion functions, etc.
+#    Reference: https://askubuntu.com/questions/1411833/what-goes-in-profile-and-bashrc
+# 2. We avoid the use of updating the PATH via the Dockerfile ENV command
+#    as this is not available to the RUN commands.  Instead, we update
+#    the PATH via the .profile file. This will require us to "source" the
+#    .profile file when, for instance, we want to verify a tool we just installed
+#    that depends on being in a path setting just made to .profile.
+
+# IMPORTANT: We get a more familiar shell and one that is more compliant
+#            to the installs below (e.g., asdf won't work with sh) if we
+#            use bash instead of sh.
+# References:
+# https://stackoverflow.com/questions/20635472/using-the-run-instruction-in-a-dockerfile-with-source-does-not-work
+# https://docs.docker.com/engine/reference/builder/#shell
+SHELL ["/bin/bash", "-c"]
+
+# If you change this, search on 'root' to update commands
+# such as ENV which do not have access to $HOME and hence
+# need to hard-code 'root' in $PATH settings, etc.
+USER root
+
+# Keep all our clutter in /tmp (we'll try to clean it all up)
+WORKDIR /tmp
+
+# Define the exact versions for this build
+# Last version that supports python 3.10 which is required by openqaoa
+ARG ANCHOR_VERSION=0.30.1
+ARG ANSIBLE_VERSION=10.6.0
+ARG ANSIBLE_LINT_VERSION=24.10.0
+ARG AWS_CLI_VERSION=2.22.0
+ARG BAZELISK_VERSION=1.18.0
+ARG BUILDIFIER_VERSION=6.3.3
+ARG BUILDOZER_VERSION=6.4.0
+ARG CONAN_VERSION=1.62.0
+ARG CVXPY_VERSION=1.6.0
+ARG GIT_LFS_VERSION=3.4.1
+ARG GO_VERSION=1.22.4
+ARG GRPCURL_VERSION=1.9.1
+ARG JUPYTERLAB_VERSION=4.0.9
+ARG NVM_VERSION=0.39.7
+ARG NODE_VERSION=20.10.0
+ARG OPENQAOA_VERSION=0.2.6
+ARG PROTOC_VERSION=30.2
+# Mapping as of 2025-05-02 (see rust-toolchain.toml for each)
+# agave: 1.84.1 (agave 2.2.12 to match yellowstone)
+# https://github.com/anza-xyz/agave/blob/v2.2.12/rust-toolchain.toml
+# vixen: latest (no version specified)
+# https://github.com/rpcpool/yellowstone-vixen/blob/main/rust-toolchain.toml
+# yellowstone: 1.84.1 (yellowstone 6.0.0+solana.2.2.12 to match agave)
+# https://github.com/rpcpool/yellowstone-grpc/blob/v6.0.0%2Bsolana.2.2.12/rust-toolchain.toml
+ARG RUST_VERSION=1.84.1
+# Allows for agave and yellowstone to have same Rust version
+# Second most popular version as of 2025-05-04
+ARG SOLANA_VERSION=2.2.12
+ARG TERRAFORM_VERSION=1.9.2
+ARG TFLINT_VERSION=0.52.0
+
+# Install needed packages
+# We use this table to track why a given package is installed
+#
+# | Package              | Dependency For   | Notes                                                       |
+# |----------------------|------------------|-------------------------------------------------------------|
+# | bash-completion      | See notes        | General development                                         |
+# | build-essential      | See notes        | General development, pyenv for building full python, solana |
+# | clang                | See notes        | General development, solana                                 |
+# | cmake                | See notes        | General development, solana                                 |
+# | curl                 | See notes        | General development, pyenv for building full python         |
+# | gdb                  | See notes        | General development                                         |
+# | git                  | See notes        | General development                                         |
+# | jq                   | See notes        | General development                                         |
+# | libbz2-dev           | See notes        | pyenv for building full python                              |
+# | liblzma-dev          | See notes        | General development, pyenv for building full python         |
+# | libffi-dev           | See notes        | General development, pyenv for building full python         |
+# | libncursesw5-dev     | See notes        | General development, pyenv for building full python         |
+# | libprotobuf-dev      | solana           |                                                             |
+# | libreadline-dev      | See notes        | General development, pyenv for building full python         |
+# | libsqlite3-dev       | See notes        | General development, pyenv                                  |
+# | libsasl2-dev.        | yellowstone-grpc |                                                             |
+# | libssl-dev           | See notes        | General development, pyenv, solana                          |
+# | libudev-dev          | anchor, solana   |                                                             |
+# | libxml2-dev          | See notes        | General development, pyenv for building full python         |
+# | libxmlsec1-dev       | See notes        | General development, pyenv for building full python         |
+# | libzstd-dev          | firedancer       |                                                             |
+# | llvm                 | solana           |                                                             |
+# | locales-all          | pyenv            |                                                             |
+# | mariadb-client       | See notes        | General development                                         |
+# | postgresql           | See notes        | Solana geyser plugin development, database development      |
+# | postgresql-contrib   | See notes        | Solana geyser plugin development, database development      |
+# | pkg-config           | See notes        | General development, solana                                 |
+# | protobuf-compiler    | solana           |                                                             |
+# | python3-dev          | See notes        | General development                                         |
+# | python3-pip          | See notes        | General development                                         |
+# | python3-venv         | See notes        | General development                                         |
+# | redis-tools          | See notes        | General development                                         |
+# | sshpass              | See notes        | General development                                         |
+# | tk-dev               | See notes        | General development, pyenv for building full python         |
+# | unzip                | See notes        | General development                                         |
+# | wget                 | See notes        | General development                                         |
+# | xz-utils             | See notes        | General development, pyenv for building full python         |
+# | zip                  | See notes        | General development                                         |
+# | zlib1g-dev           | See notes        | General development, pyenv for building full python, solana |
+
+############################
+# The deadsnakes PPA (Personal Package Archive) is a repository maintained by the
+# deadsnakes team that provides newer versions of Python that are not available
+# in the default Ubuntu repositories. This PPA is often used to install and
+# manage multiple versions of Python on Ubuntu systems.
+#
+# The software-properties-common package is required because it provides the
+# add-apt-repository command, which is used to add PPAs (Personal Package Archives)
+# to your system. In this case, it is used to add the deadsnakes PPA.
+# openqoa requires python 3.8 - 3.10
+############################
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install \
+    python3.10-dev \
+    python3.10-venv \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
+    && update-alternatives --set python3 /usr/bin/python3.10
+
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install \
+    bash-completion \
+    build-essential \
+    clang \
+    cmake \
+    curl \
+    gdb \
+    git \
+    jq \
+    libbz2-dev \
+    liblzma-dev \
+    libffi-dev \
+    libncursesw5-dev \
+    libprotobuf-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libsasl2-dev \
+    libssl-dev \
+    libudev-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libzstd-dev \
+    llvm \
+    locales-all \
+    mariadb-client \
+    pkg-config \
+    postgresql \
+    postgresql-contrib \
+    protobuf-compiler \
+    redis-tools \
+    sshpass \
+    tk-dev \
+    unzip \
+    wget \
+    xz-utils \
+    zip \
+    zlib1g-dev \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Release builds will fail with:
+# "Your compiler (cc) is not supported due to a memcmp related bug reported in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95189.
+#  We strongly recommend against using this compiler."
+# Updating to later versions of gcc and g++ resolves this issue.
+# References:
+# https://github.com/rustls/rustls/issues/1967
+# https://github.com/librespot-org/librespot/issues/1346
+# https://stackoverflow.com/questions/37806888/configure-error-a-compiler-with-support-for-c11-language-features-is-required
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y remove  gcc g++ \
+    && apt-get -y install gcc-10 g++-10
+
+############################
+# Install and upgrade pip
+# Having the latest pip helps speed up pip installs
+############################
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3.10 get-pip.py \
+    && update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.10 1 \
+    && update-alternatives --set pip3 /usr/local/bin/pip3.10
+RUN python3 -m pip install --upgrade pip
+
+############################
+# ansible and ansible-lint
+############################
+# IMPORTANT: Ansible installs are very brittle.
+#            This set of commands is the only one that worked.
+#            Leaving these previous comments in for now.
+# RUN source ~/.profile \
+# && pip3 install ansible-dev-tools \
+# && ansible --version
+# --ignore-installed is needed to avoid a conflict with the system installed version
+#   it may cause issues with other packages that depend on the system installed version
+RUN python3 -m pip install ansible==${ANSIBLE_VERSION}
+RUN python3 -m pip install --ignore-installed ansible-lint==${ANSIBLE_LINT_VERSION}
+
+############################
+# AWS CLI
+############################
+# References:
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-version.html
+# https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && aws --version \
+    && rm -rvf aws \
+    && rm awscliv2.zip
+
+############################
+# Bazel
+############################
+RUN curl -LOS https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-$(dpkg --print-architecture) \
+    && cp ./bazelisk-linux-amd64 /usr/local/bin/bazel \
+    && chmod +x /usr/local/bin/bazel \
+    && yes | rm ./bazelisk-linux-amd64 \
+    && bazel --version
+
+############################
+# Bazel - buildifier
+############################
+RUN curl -LOS https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-amd64 \
+    && cp ./buildifier-linux-amd64 /usr/local/bin/buildifier \
+    && chmod +x /usr/local/bin/buildifier \
+    && yes | rm ./buildifier-linux-amd64 \
+    && buildifier --version
+
+############################
+# Bazel - buildozer
+############################
+RUN curl -LOS https://github.com/bazelbuild/buildtools/releases/download/v${BUILDOZER_VERSION}/buildozer-linux-amd64 \
+    && cp ./buildozer-linux-amd64 /usr/local/bin/buildozer \
+    && chmod +x /usr/local/bin/buildozer \
+    && yes | rm ./buildozer-linux-amd64 \
+    && buildozer -version
+
+############################
+# build - Python build module
+############################
+RUN source ~/.profile \
+&& pip3 install build \
+&& python3 -m build --help
+
+############################
+# Conan
+############################
+RUN python3 -m pip install conan==${CONAN_VERSION}
+
+############################
+# cvxpy
+############################
+RUN python3 -m pip install cvxpy==${CVXPY_VERSION}
+
+############################
+# Docker CLI completion
+############################
+# Note, this has to go into .bashrc as opposed to .profile.
+# This is because we need to 'source' this for every interactive shell.
+# .bashrc is sourced for every interactive shell. .profile is sourced only for initial login.
+RUN curl -L https://raw.githubusercontent.com/docker/cli/master/contrib/completion/bash/docker \
+    -o /etc/bash_completion.d/docker
+RUN echo "source /etc/bash_completion" >> ~/.bashrc
+
+############################
+# Git LFS
+############################
+RUN curl -LOS https://github.com/git-lfs/git-lfs/releases/download/v${GIT_LFS_VERSION}/git-lfs-linux-amd64-v${GIT_LFS_VERSION}.tar.gz \
+    && tar -xzf git-lfs-linux-amd64-v${GIT_LFS_VERSION}.tar.gz \
+    && cd git-lfs-${GIT_LFS_VERSION} \
+    && ./install.sh \
+    && git-lfs --version
+
+############################
+# Go
+############################
+RUN wget -c https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz -O - | tar -xz -C /usr/local
+RUN echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.profile
+RUN source ~/.profile \
+    && go version
+
+############################
+# gRPCurl
+############################
+RUN curl -LOS https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_amd64.deb \
+    && dpkg -i  grpcurl_${GRPCURL_VERSION}_linux_amd64.deb \
+    && grpcurl --version
+
+############################
+# Julia
+# References:
+# https://julialang.org/downloads/
+# https://julialang.org/downloads/platform/
+# Notes:
+# 1. We copy the Julia libs into a known location and reference it with
+#    LD_LIBRARY_PATH. This is for the jlrs crate.
+# 2. We use Julia 1.7 as this is the version referenced in the Julia CFMMRouter package.
+############################
+RUN curl -LOS https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.3-linux-x86_64.tar.gz \
+    && tar -xzf julia-1.7.3-linux-x86_64.tar.gz \
+    && cp -r ./julia-1.7.3 /root/.julia \
+    && rm -rvf ./julia-1.7.3 \
+    && echo 'export PATH=$PATH:/root/.julia/bin' >> ~/.profile \
+    && source ~/.profile \
+    && julia --version \
+    && cp -R /root/.julia/lib/. /usr/local/lib \
+    && echo 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib' >> ~/.profile
+
+############################
+# Jupyter
+############################
+RUN python3 -m pip install jupyterlab==${JUPYTERLAB_VERSION}
+
+############################
+# nvm, node, npm and node packages
+# References:
+# https://github.com/nvm-sh/nvm
+# Notes:
+# 1. This script will pick up the $NODE_VERSION we have set above
+#    Hence, by insalling nvm, we will also install node and npm.
+# 2. The script will set some environment variables in .bashrc, so it will need to be sourced.
+# 3. But for some reason, we need to source the .nvm/nvm.sh file to get nvm, node and npm.
+############################
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh | bash - \
+    && source ~/.nvm/nvm.sh \
+    && nvm --version \
+    && node --version \
+    && npm --version
+
+############################
+# openqaoa
+# Notes:
+# 1. openqaoa requires python 3.8 - 3.10
+############################
+RUN python3 -m pip install openqaoa==${OPENQAOA_VERSION}
+
+############################
+# PostgreSQL
+# Debian Bullseye typically includes PostgreSQL version 13.
+############################
+
+############################
+# Protocol Buffers Compiler (protoc)
+############################
+RUN curl -LOS https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+    && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /usr/local \
+    && rm protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+    && protoc --version
+
+############################
+# Rust
+############################
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup-init.sh \
+    && chmod +x ./rustup-init.sh \
+    && ./rustup-init.sh -y --default-toolchain=${RUST_VERSION} \
+    && rm ./rustup-init.sh
+# To test, we need to source our profile so we can get cargo into our path.
+RUN source ~/.profile \
+    && cargo --version
+
+# TODO: For anchor version 0.31. we need glibc 2.39
+# Upgrade GCC and G++ to version 10 (or newer)
+# RUN apt-get -y remove gcc g++ \
+# && apt-get -y install gcc-10 g++-10 \
+# && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 \
+# && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
+# Anchor requires glibc version 2.39, ubuntu 20.04 has 2.31
+# RUN wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz \
+#     && tar -xvzf glibc-2.39.tar.gz \
+#     && cd glibc-2.39 \
+#     && mkdir build && cd build \
+#     && ../configure --prefix=/usr \
+#     && make -j$(nproc) \
+#     && make install \
+#     && cd ../.. \
+#     && rm -rf glibc-2.39 glibc-2.39.tar.gz \
+#     && ldconfig
+
+############################
+# Solana
+# Includes yarn and anchor
+# References:
+# https://docs.solana.com/cli/install-solana-cli-tools
+# https://yarnpkg.com/getting-started/install
+# https://www.anchor-lang.com/docs/installation
+############################
+RUN sh -c "$(curl -sSfL https://release.anza.xyz/v${SOLANA_VERSION}/install)" \
+    && source ~/.profile \
+    && solana --version
+# TODO
+# RUN source ~/.profile \
+#     && corepack enable
+#     # TODO: why isn't this working? && yarn --version
+RUN source ~/.profile \
+    && cargo install --git https://github.com/coral-xyz/anchor avm --force \
+    && avm install ${ANCHOR_VERSION} \
+    && anchor --version
+
+############################
+# Terraform
+############################
+RUN curl -LOS https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+&& unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+&& cp ./terraform /usr/local/bin/terraform \
+&& chmod +x /usr/local/bin/terraform \
+&& yes | rm ./terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+&& terraform --version
+
+############################
+# TFLint
+############################
+RUN curl -LOS  https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip \
+&& unzip tflint_linux_amd64.zip \
+&& cp ./tflint /usr/local/bin/tflint \
+&& chmod +x /usr/local/bin/tflint \
+&& yes | rm ./tflint_linux_amd64.zip \
+&& tflint --version
+
+############################
+# wscat
+# For some reason we need to sourc ~/.nvm/nvm.sh directly
+# instead of ~/.profile.
+############################
+RUN source ~/.nvm/nvm.sh \
+    && npm install -g wscat \
+    && wscat --version
+
+
+############################
+# Legacy from here on down
+# Keeping for now as a reference
+############################
+
+# Begin: Holding off on nautilus for now
+# ARG POETRY_VERSION=1.6.1
+# ARG PRECOMMIT_VERSION=3.6.0
+# ARG PYENV_VERSION=2.3.29
+# ARG PYTHON_VERSION=3.12
+# End: Holding off on nautilus for now
+
+# TODO: Pyenv suggested build environment - remove once we have tested
+# build-essential
+# curl
+# libbz2-dev
+# liblzma-dev
+# libffi-dev
+# libncursesw5-dev
+# libreadline-dev
+# libsqlite3-dev
+# libssl-dev
+# libxml2-dev
+# libxmlsec1-dev
+# tk-dev
+# xz-utils
+# zlib1g-dev
+
+############################
+# PM2
+# Holding off on nautilus for now
+############################
+# RUN source ~/.profile \
+#     && npm install pm2@latest -g \
+#     && pm2 --version
+
+############################
+# Poetry
+# Holding off on nautilus for now
+############################
+# Poetry will attempt to put it's wrapper file here
+# Note: $HOME is not available in ENV commands
+# RUN mkdir -p $HOME/.local/bin
+# RUN echo 'export PATH=$PATH:/root/.local/bin' >> ~/.profile
+# RUN curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION}
+# RUN source ~/.profile \
+#     && poetry --version
+# # Pre-configure poetry for in-project virtualenvs
+# RUN mkdir -p /root/.config/pypoetry && touch $_/config.toml
+# RUN echo -e '\
+#     [virtualenvs]\n\
+#     in-project = true'\
+#     >> /root/.config/pypoetry/config.toml
+
+############################
+# Pyenv
+# Holding off on nautilus for now
+# We setup python version 3.11 to stay in sync with what is
+# used with nautilus dockerfile which uses python:3.11-slim
+# Note, Pyenv install instructions recommends updating both .bashrc and .profile.
+# Reference: https://github.com/pyenv/pyenv#getting-pyenv
+############################
+# ENV PYENV_GIT_TAG=v${PYENV_VERSION}
+# RUN curl https://pyenv.run | bash
+# RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+# RUN echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+# RUN echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+# RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.profile
+# RUN echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.profile
+# RUN echo 'eval "$(pyenv init -)"' >> ~/.profile
+# RUN source ~/.profile \
+#      && pyenv install ${PYTHON_VERSION} \
+#      && pyenv versions
+# ENV PYENV_VERSION=${PYTHON_VERSION}
+
+############################
+# pre-commit
+# Holding off on nautilus for now
+# Needs to come after our defined python setup with pyenv
+############################
+# RUN python3 -m pip install pre-commit==${PRECOMMIT_VERSION}

@@ -1,0 +1,41 @@
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'What bare metal server are we deploying?'
+        required: true
+        type: choice
+        options:
+        - solana-rpc
+      branch:
+        description: 'What qtrade branch to deploy from?'
+        required: true
+        type: string
+        default: 'main'
+  
+jobs:
+  deploy:
+    name: Deploy via ansible playbook
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ inputs.branch }}"
+          
+      - name: Install Ansible
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Run ansible playbook
+        env:
+          CHERRY_AUTH_TOKEN: ${{ secrets.QTRADE_CHERRY_AUTH_TOKEN }}
+        run: |
+          cd infra/ansible/bare-metal/${{ inputs.deploy }}
+          ansible-playbook \
+            playbook.yml

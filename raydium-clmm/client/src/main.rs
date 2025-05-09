@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+//qtrade: migrating ClientConfig to instructions for dual bin/lib build
+use instructions::ClientConfig;
 use anchor_client::{Client, Cluster};
 use anchor_lang::prelude::AccountMeta;
 use anyhow::{format_err, Result};
@@ -51,6 +53,7 @@ use spl_token_2022::{
 use spl_token_client::token::ExtensionInitializationParams;
 
 use crate::instructions::utils;
+/*qtrade: migrating ClientConfig to instructions for dual bin/lib build
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClientConfig {
     http_url: String,
@@ -67,6 +70,7 @@ pub struct ClientConfig {
     tickarray_bitmap_extension: Option<Pubkey>,
     amm_config_index: u16,
 }
+*/
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct PoolAccounts {
@@ -78,6 +82,7 @@ pub struct PoolAccounts {
     pool_tick_arrays: Vec<Pubkey>,
 }
 
+/*qtrade: migrating load_cfg to instructions for dual bin/lib build
 fn load_cfg(client_config: &String) -> Result<ClientConfig> {
     let mut config = Ini::new();
     let _map = config.load(client_config).unwrap();
@@ -176,10 +181,14 @@ fn load_cfg(client_config: &String) -> Result<ClientConfig> {
         amm_config_index,
     })
 }
+*/
+
+/* qtrade: migrating read_keypair_file to instructions for dual bin/lib build
 fn read_keypair_file(s: &str) -> Result<Keypair> {
     solana_sdk::signature::read_keypair_file(s)
         .map_err(|_| format_err!("failed to read keypair from {}", s))
 }
+*/
 fn write_keypair_file(keypair: &Keypair, outfile: &str) -> Result<String> {
     solana_sdk::signature::write_keypair_file(keypair, outfile)
         .map_err(|_| format_err!("failed to write keypair to {}", outfile))
@@ -547,17 +556,20 @@ pub enum CommandsName {
 fn main() -> Result<()> {
     println!("Starting...");
     let client_config = "client_config.ini";
-    let pool_config = load_cfg(&client_config.to_string()).unwrap();
+    // qtrade: migrating load_cfg to instructions for dual bin/lib build
+    let pool_config = instructions::load_cfg(&client_config.to_string()).unwrap();
     // Admin and cluster params.
-    let payer = read_keypair_file(&pool_config.payer_path)?;
-    let admin = read_keypair_file(&pool_config.admin_path)?;
+    // qtrade: migrating read_keypair_file to instructions for dual bin/lib build
+    let payer = instructions::read_keypair_file(&pool_config.payer_path)?;
+    let admin = instructions::read_keypair_file(&pool_config.admin_path)?;
     // solana rpc client
     let rpc_client = RpcClient::new(pool_config.http_url.to_string());
 
     // anchor client.
     let anchor_config = pool_config.clone();
     let url = Cluster::Custom(anchor_config.http_url, anchor_config.ws_url);
-    let wallet = read_keypair_file(&pool_config.payer_path)?;
+    // qtrade: migrating ClientConfig to instructions for dual bin/lib build
+    let wallet = instructions::read_keypair_file(&pool_config.payer_path)?;
     let anchor_client = Client::new(url, Rc::new(wallet));
     let program = anchor_client.program(pool_config.raydium_v3_program)?;
 

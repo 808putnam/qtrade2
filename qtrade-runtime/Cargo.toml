@@ -1,0 +1,70 @@
+[package]
+name = "qtrade-runtime"
+version = "0.1.0"
+# qtrade: removing this
+# rust-version = "1.75.0"
+edition.workspace = true
+
+[[test]]
+name = "full_lifecycle"
+path = "tests/full_lifecycle/mod.rs"
+
+[[test]]
+name = "initialize"
+path = "tests/initialize/mod.rs"
+
+[[test]]
+name = "arbitrage_communication"
+path = "tests/arbitrage_communication/mod.rs"
+
+[dependencies]
+anchor-client = { path = "../anchor/client" }
+anchor-lang = { path = "../anchor/lang" }
+anyhow = { workspace = true }
+base64 = { workspace = true }
+bincode = { workspace = true }
+borsh = { workspace = true }
+bs58 = { workspace = true }
+dashmap = { workspace = true }
+lazy_static = { workspace = true }
+log = { workspace = true }
+once_cell = { workspace = true }
+opentelemetry = { workspace = true }
+orca_whirlpools_client = { path = "../orca/client" }
+pyth-sdk-solana = { path = "../pyth/pyth-sdk-solana" }
+qtrade-solver = { path = "../qtrade-solver" }
+rand = { workspace = true }
+raydium_amm_v3_client = { path = "../raydium-clmm/client" }
+raydium_cp_swap_client = { path = "../raydium-cp-swap/client" }
+reqwest = { workspace = true}
+rustls = { workspace = true }
+serde_json = { workspace = true }
+simplelog = { workspace = true}
+solana-trader-client-rust = { path = "../bx" }
+solana-client = { workspace = true }
+spl-pod = { workspace = true }
+solana-sdk = { workspace = true}
+spl-token = { workspace = true }
+spl-token-2022 = { workspace = true }
+thiserror = { workspace = true}
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+chrono = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true}
+tracing-appender = { workspace = true }
+tracing-subscriber = { workspace = true }
+yellowstone-vixen = { path = "../vixen/crates/runtime", features = ["stream"] }
+yellowstone-vixen-core = { path = "../vixen/crates/core" }
+yellowstone-vixen-parser = { path = "../vixen/crates/parser", features = [
+  "proto",
+  "token-program",
+  "orca",
+  "raydium"
+] }
+
+[build-dependencies]
+prost-build = { workspace = true }
+
+[dev-dependencies]
+yellowstone-vixen-mock = { path = "../vixen/crates/mock" }

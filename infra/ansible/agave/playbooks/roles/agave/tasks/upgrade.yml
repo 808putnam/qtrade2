@@ -1,0 +1,95 @@
+- name: Ensure /home/ubuntu/scripts exists
+  ansible.builtin.file:
+    path: /home/ubuntu/scripts
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy stage_agave_files.sh file to /home/ubuntu/scripts/stage_agave_files.sh
+  ansible.builtin.copy:
+    src: files/stage_agave_files.sh
+    dest: /home/ubuntu/scripts/stage_agave_files.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy setup_disks_with_part.sh file to /home/ubuntu/scripts/setup_disks_with_part.sh
+  ansible.builtin.copy:
+    src: files/setup_disks_with_part.sh
+    dest: /home/ubuntu/scripts/setup_disks_with_part.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy find_validator.sh file to /home/ubuntu/scripts/find_validator.sh
+  ansible.builtin.copy:
+    src: files/find_validator.sh
+    dest: /home/ubuntu/scripts/find_validator.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy snapshot-finder.py file to /home/ubuntu/scripts/snapshot-finder.py
+  ansible.builtin.copy:
+    src: files/snapshot-finder.py
+    dest: /home/ubuntu/scripts/snapshot-finder.py
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy rpc.sh file to /home/ubuntu/scripts/rpc.sh
+  ansible.builtin.copy:
+    src: files/rpc.sh
+    dest: /home/ubuntu/scripts/rpc.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Ensure /home/ubuntu/files exists
+  ansible.builtin.file:
+    path: /home/ubuntu/files
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Ensure /home/ubuntu/Solana
+  ansible.builtin.file:
+    path: /home/ubuntu/Solana
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Ensure /home/ubuntu/Solana/log exists
+  ansible.builtin.file:
+    path: /home/ubuntu/Solana/log
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy logrotate-solana-validator to /home/ubuntu/files/solana-validator
+  ansible.builtin.copy:
+    src: files/logrotate-solana-validator
+    dest: /home/ubuntu/files/solana-validator
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644' # read and write permissions to the owner, and read permissions to the group and others
+
+- name: Copy logrotate-solana-validator to /etc/logrotate.d/solana-validator
+  ansible.builtin.copy:
+    src: files/logrotate-solana-validator
+    dest: /etc/logrotate.d/solana-validator
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Write Agave validator keypair JSON to a file
+  ansible.builtin.copy:
+    content: "{{ agave_validator_keypair_json }}"
+    dest: /home/ubuntu/Solana/validator-keypair.json
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644' # read and write permissions to the owner, and read permissions to the group and others

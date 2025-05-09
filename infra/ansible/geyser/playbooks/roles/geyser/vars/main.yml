@@ -1,0 +1,1 @@
+geyser_rust_version: "{{ rust_version }}"

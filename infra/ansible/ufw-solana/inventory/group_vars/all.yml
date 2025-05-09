@@ -1,0 +1,18 @@
+ssh_ufw_rules:
+  - { rule: allow, port: 22, comment: "SSH UFW Rules" }
+
+solana_ufw_rules:
+  - { rule: allow, port: "8000:10000", proto: udp, comment: "Solana udp Specific Rules" }
+  - { rule: allow, port: "8000:10000", proto: tcp, comment: "Solana tcp Specific Rules" }
+  - { rule: allow, port: 18888, proto: any, comment: "Solana Specific Rules" }
+
+# AI Notes:
+# Seeing an IP range like 172.17.0.0/16 can often indicate that Docker networking is being used,
+# as Docker commonly assigns IP addresses from this range to containers by default.
+# This range is part of the private IP address space defined by RFC 1918, which is used for
+# local communications within a private network.
+#
+# In this file, the rule allowing traffic from 172.17.0.0/16 suggests that the Solana service
+# is configured to accept connections from Docker containers or other devices within this private network range.
+solana_local_rules:
+  - { rule: allow, port: 8900, src: 172.17.0.0/16, comment: "Local Solana Rule" }

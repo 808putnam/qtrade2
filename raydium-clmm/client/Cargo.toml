@@ -5,6 +5,14 @@ version = "0.1.0"
 # rust-version = "1.56"
 edition.workspace = true
 
+[[bin]]
+name = "raydium-amm-v3-client"
+path = "src/main.rs"
+
+[lib]
+name = "raydium_amm_v3_client"
+path = "src/lib.rs"
+
 [dependencies]
 # anchor-client = "0.29.0"
 anchor-client = { path = "../../anchor/client" }

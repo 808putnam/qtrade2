@@ -1,0 +1,49 @@
+# Notes:
+# requied_packages var is set in vars/main.yml
+
+- name: Update the apt package index
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+
+- name: Install required packages on Ubuntu
+  ansible.builtin.apt:
+    name: "{{ required_packages.split(',') }}"
+    state: present
+    update_cache: true
+
+- name: Remove urlib package
+  ansible.builtin.apt:
+    name: python3-urllib3
+    state: absent
+    purge: true
+  ignore_errors: true
+
+- name: Remove managed package
+  ansible.builtin.command:
+    cmd: rm /usr/lib/python3.12/EXTERNALLY-MANAGED
+  register: result
+  failed_when: result.rc != 0 and "No such file or directory" not in result.stderr
+  changed_when: result.rc == 0
+
+# TODO: Move this to agave playbook, used by snapshot-finder
+- name: Install requests package with pip
+  ansible.builtin.pip:
+    name:
+      - requests==2.31.0
+      - urllib3==1.26.6
+  become: true
+  become_user: root
+
+- name: Add history search bindings to .bashrc
+  ansible.builtin.blockinfile:
+    path: /home/ubuntu/.bashrc
+    block: |
+      # History search bindings
+      bind '"\e[A": history-search-backward'
+      bind '"\e[B": history-search-forward'
+  become: true
+  notify: Restart chrony

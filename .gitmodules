@@ -1,0 +1,54 @@
+[submodule "tools/CFMMRouter.jl"]
+	path = playground/CFMMRouter.jl
+	url = https://github.com/808putnam/CFMMRouter.jl.git
+[submodule "solana/yellowstone-vixen"]
+	path = playground/yellowstone-vixen
+	url = https://github.com/808putnam/yellowstone-vixen.git
+[submodule "solana/solana-accountsdb-plugin-postgres"]
+	path = playground/solana-accountsdb-plugin-postgres
+	url = https://github.com/808putnam/solana-accountsdb-plugin-postgres.git
+[submodule "solana/solana-postgres-rpc-server"]
+	path = playground/solana-postgres-rpc-server
+	url = https://github.com/808putnam/solana-postgres-rpc-server.git
+[submodule "solana-trader-client-go"]
+	path = playground/solana-trader-client-go
+	url = https://github.com/808putnam/solana-trader-client-go.git
+[submodule "solana-trader-client-python"]
+	path = playground/solana-trader-client-python
+	url = https://github.com/808putnam/solana-trader-client-python.git
+[submodule "solana-trader-client-ts"]
+	path = playground/solana-trader-client-ts
+	url = https://github.com/808putnam/solana-trader-client-ts.git
+[submodule "solana-trader-proto"]
+	path = playground/solana-trader-proto
+	url = https://github.com/808putnam/solana-trader-proto.git
+[submodule "yellowstone-grpc"]
+	path = playground/yellowstone-grpc
+	url = https://github.com/808putnam/yellowstone-grpc.git
+[submodule "raydium-cp-swap"]
+	path = playground/raydium-cp-swap
+	url = https://github.com/808putnam/raydium-cp-swap.git
+[submodule "raydium-clmm"]
+	path = playground/raydium-clmm
+	url = https://github.com/808putnam/raydium-clmm.git
+[submodule "raydium-amm"]
+	path = playground/raydium-amm
+	url = https://github.com/808putnam/raydium-amm.git
+[submodule "phoenix-v1"]
+	path = playground/phoenix-v1
+	url = https://github.com/808putnam/phoenix-v1.git
+[submodule "whirlpools"]
+	path = playground/whirlpools
+	url = https://github.com/808putnam/whirlpools.git
+[submodule "cvxpy"]
+	path = playground/cvxpy
+	url = https://github.com/808putnam/cvxpy.git
+[submodule "anchor"]
+	path = playground/anchor
+	url = https://github.com/808putnam/anchor.git
+[submodule "pyth-sdk-rs"]
+	path = playground/pyth-sdk-rs
+	url = https://github.com/808putnam/pyth-sdk-rs.git
+[submodule "solana-trader-client-rust"]
+	path = playground/solana-trader-client-rust
+	url = https://github.com/808putnam/solana-trader-client-rust.git

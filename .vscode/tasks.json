@@ -1,0 +1,81 @@
+{
+    "version": "2.0.0",
+    // Ctrl-Shift-B to run a task
+    "tasks": [
+        {
+            "label": "cargo build qtrade-client",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "build",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/qtrade-client"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "cargo build qtrade-custom-checks",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "build",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/qtrade-custom-checks"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "cargo build qtrade-solver",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "build",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/qtrade-solver"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "cargo build --example stream-parser",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "build",
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/yellowstone-vixen/examples/stream-parser"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cd level0 && cargo build-sbf --debug",
+            "problemMatcher": [],
+        },
+        {
+            "label": "solana-debugger",
+            "type": "shell",
+            "command": "solana-ledger-tool program run -l test-ledger -e debugger ${workspaceFolder}/target/deploy/level0.so"
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+cvxpy
+numpy
+pytest
+wheel

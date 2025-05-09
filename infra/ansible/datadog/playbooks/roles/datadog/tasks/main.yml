@@ -1,0 +1,11 @@
+- name: Print Current Docker Args
+  ansible.builtin.import_tasks: "print_docker_args.yml"
+
+- name: Upgrade Container
+  ansible.builtin.import_tasks: "upgrade.yml"
+
+- name: Print New Docker Args
+  ansible.builtin.import_tasks: "print_docker_args.yml"
+
+- name: Run Health checks for the container
+  ansible.builtin.import_tasks: "healthchecks.yml"

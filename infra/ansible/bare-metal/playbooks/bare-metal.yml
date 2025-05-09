@@ -1,0 +1,33 @@
+- name: Register SSH host keys
+  hosts: all
+  gather_facts: false
+
+  # Uses special variable ansible_host to get the IP address of the host
+  # Reference: https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html
+  tasks:
+    - name: Accept EC2 SSH host keys
+      connection: local
+      become: false
+      ansible.builtin.shell: |
+        ssh-keygen -F {{ ansible_host }} ||
+          ssh-keyscan -H {{ ansible_host }} >> ~/.ssh/known_hosts
+      register: known_hosts_script
+      changed_when: "'found' not in known_hosts_script.stdout"
+  tags: always
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+# variable remote_user is set in github action bare-metal.yml
+- name: Provision new bare-metal insance
+  hosts: all
+  remote_user: "{{ remote_user }}"
+  become: true
+  become_method: ansible.builtin.sudo
+  become_flags: "su -c"
+  gather_facts: true
+  tasks:
+    - name: Import bare-metal role
+      ansible.builtin.import_role:
+        name: bare-metal
+  vars:
+    ansible_python_interpreter: /usr/bin/python3

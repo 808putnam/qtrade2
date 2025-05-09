@@ -20,8 +20,11 @@ clarabel = { workspace = true}
 aws-config = { workspace = true, features = ["behavior-version-latest"] }
 # aws-sdk-braket = "1.51.0"
 aws-sdk-braket = { workspace = true}
-# tokio = { version = "1", features = ["full"] }
+# spl-pod = { version = "0.5.0" }
+spl-pod = { workspace = true }
+# tokio = { version = "1", features = ["full"
 tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
 
 # [dependencies.pyo3]
 # version = "0.23.1"

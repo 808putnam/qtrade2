@@ -1,0 +1,7 @@
+- name: Debug solana_ufw_rules
+  debug:
+    var: solana_ufw_rules
+
+- name: Debug solana_local_rules
+  debug:
+    var: solana_local_rules

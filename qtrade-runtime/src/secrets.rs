@@ -1,0 +1,5 @@
+pub const BLOXROUTE_API_KEY: &str = "ZGI3ZDc2NDgtOTYyZC00YTYwLTg5ODItOTRmYzExNDQwODVkOjMyNTdjZDQ3Zjg2NzAxOTYwMDlmNTE2Njk4NzQyM2Mx";
+pub const HELIUS_API_KEY: &str = "15a5c453-0cab-47ab-92a8-de8806ecca10";
+pub const NEXTBLOCK_API_KEY: &str = "trial1735667846-SiEATzPAqRkI7Q9IpcygzyJRkke2OnTdpNrcdsDQiWo%3D";
+pub const QUICKNODE_API_KEY: &str = "c602ee5207767ee418e5a5c7705166fda8a36829";
+pub const TEMPORAL_API_KEY: &str = "TODO";

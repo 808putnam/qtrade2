@@ -1,0 +1,65 @@
+- name: Log into the ghcr docker registry
+  community.docker.docker_login:
+    registry_url: ghcr.io
+    username: "{{ qtrade_client_docker_user }}"
+    password: "{{ qtrade_client_docker_password }}"
+    reauthorize: true
+    debug: true
+  become: true
+  become_user: root
+
+- name: Pull image
+  community.docker.docker_image:
+    name: "{{ qtrade_client_image }}"
+    source: pull
+    debug: true
+  become: true
+  become_user: root
+
+- name: Execute Docker run command
+  community.docker.docker_container:
+    name: "{{ qtrade_client_docker_name }}"
+    env: >
+      {{
+        {
+          'DD_API_KEY': qtrade_client_datadog_api_key,
+          'LOG_LEVEL': 'info',
+          'MC1_JSON': qtrade_client_mc1_json,
+          'OTEL_EXPORTER_OTLP_ENDPOINT': 'http://opentelemetry-collector:4317'
+        }
+      }}
+    networks:
+      - name: otel_network
+    hostname: "{{ ansible_hostname }}"
+    pull: true
+    log_driver: "{{ qtrade_client_log_driver }}"
+    log_options:
+      max-size: "{{ qtrade_client_log_maxsize }}"
+      max-file: "{{ qtrade_client_log_maxfile }}"
+    runtime: "{{ qtrade_client_runtime_opt }}"
+    restart_policy: "{{ qtrade_client_restart_opt }}"
+    memory: "{{ qtrade_client_mem }}"
+    detach: "{{ qtrade_client_detach_opt }}"
+    image: "{{ qtrade_client_image }}"
+    command: "{{ qtrade_client_args }}"
+  become: true
+  become_user: root
+
+- name: Prune everything
+  become: true
+  become_user: "root"
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
+    containers: true
+    containers_filters:
+      # only consider containers created more than 72 hours ago
+      until: 72h
+    volumes: true
+    networks: true
+  register: prune_result
+
+- name: Show prune result
+  ansible.builtin.debug:
+    var: prune_result

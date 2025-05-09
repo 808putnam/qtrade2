@@ -1,0 +1,136 @@
+- name: Ensure /home/ubuntu/scripts exists
+  ansible.builtin.file:
+    path: /home/ubuntu/scripts
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy stage_datadog_files.sh file to /home/ubuntu/scripts/stage_datadog_files.sh
+  ansible.builtin.copy:
+    src: files/stage_datadog_files.sh
+    dest: /home/ubuntu/scripts/stage_datadog_files.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Ensure /home/ubuntu/files exists
+  ansible.builtin.file:
+    path: /home/ubuntu/files
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy qtrade-custom-checks.service file to /home/ubuntu/files/qtrade-custom-checks.service
+  ansible.builtin.copy:
+    src: files/qtrade-custom-checks.service
+    dest: /home/ubuntu/files/qtrade-custom-checks.service
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copy qtrade-custom-checks.service file to /etc/systemd/system/qtrade-custom-checks.service
+  ansible.builtin.copy:
+    src: files/qtrade-custom-checks.service
+    dest: /etc/systemd/system/qtrade-custom-checks.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure /etc/otelcol-contrib directory exists
+  ansible.builtin.file:
+    path: /etc/otelcol-contrib
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+  become_user: root
+
+- name: Copy otel-collector-config-testnet.yml file to /home/ubuntu/files/otel-collector-config-testnet.yml
+  ansible.builtin.copy:
+    src: files/otel-collector-config-testnet.yml
+    dest: /home/ubuntu/files/otel-collector-config-testnet.yml
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+
+- name: Copy otel-collector-config-testnet.yml to /etc/otelcol-contrib/otel-collector-config-testnet.yml
+  ansible.builtin.copy:
+    src: files/otel-collector-config-testnet.yml
+    dest: /etc/otelcol-contrib/otel-collector-config-testnet.yml
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  become_user: root
+
+- name: Create the docker network to submit to otel on
+  community.docker.docker_network:
+    name: otel_network
+    state: present
+
+- name: Pull image
+  community.docker.docker_image:
+    name: "{{ datadog_image }}"
+    source: pull
+    debug: true
+  become: true
+  become_user: root
+
+# Notes:
+# 1. ansible_hostname details:
+#    https://stackoverflow.com/questions/45908067/whats-the-difference-between-inventory-hostname-and-ansible-hostname
+- name: Execute Docker run command
+  community.docker.docker_container:
+    name: "{{ datadog_docker_name }}"
+    # IMPORTANT: We need to run as root due to this issue
+    #            https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/11791
+    user: "0:0"
+    env: >
+      {{
+        {
+          'DD_API_KEY': datadog_api_key,
+          'LOG_LEVEL': 'info'
+        }
+      }}
+    networks:
+      - name: otel_network
+    ports: "{{ datadog_ports }}"
+    hostname: "{{ ansible_hostname }}"
+    volumes:
+      - "{{ datadog_volumes }}"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    pull: true
+    log_driver: "{{ datadog_log_driver }}"
+    log_options:
+      max-size: "{{ datadog_log_maxsize }}"
+      max-file: "{{ datadog_log_maxfile }}"
+    runtime: "{{ datadog_runtime_opt }}"
+    restart_policy: "{{ datadog_restart_opt }}"
+    memory: "{{ datadog_mem }}"
+    detach: "{{ datadog_detach_opt }}"
+    image: "{{ datadog_image }}"
+  become: true
+  become_user: root
+
+- name: Prune everything
+  become: true
+  become_user: "root"
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
+    containers: true
+    containers_filters:
+      # only consider containers created more than 72 hours ago
+      until: 72h
+    volumes: true
+    networks: true
+  register: prune_result
+
+- name: Show prune result
+  ansible.builtin.debug:
+    var: prune_result

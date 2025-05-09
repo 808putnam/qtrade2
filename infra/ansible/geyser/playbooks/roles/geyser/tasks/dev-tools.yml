@@ -1,0 +1,73 @@
+# Notes:
+# 1. remote_user set in .github/workflows/geyser.yml
+# 2. geyser_rust_version set in vars/main.yml from .github/workflows/geyser.yml
+
+- name: Ensure /home/ubuntu/files exists
+  ansible.builtin.file:
+    path: /home/ubuntu/files
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy geyser debug config file to /home/ubuntu/files/geyser_config.json
+  ansible.builtin.copy:
+    src: files/geyser_config.json.debug
+    dest: /home/ubuntu/files/geyser_config.json
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644' # read and write permissions to the owner, and read permissions to the group and others
+
+- name: Copy geyser release config file to /home/ubuntu/files/geyser_config.json.release
+  ansible.builtin.copy:
+    src: files/geyser_config.json.release
+    dest: /home/ubuntu/files/geyser_config.json.release
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644' # read and write permissions to the owner, and read permissions to the group and others
+
+- name: Ensure /home/ubuntu/Solana exists
+  ansible.builtin.file:
+    path: /home/ubuntu/Solana
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Copy geyser debug config file to /home/ubuntu/Solana/geyser_config.json
+  ansible.builtin.copy:
+    src: files/geyser_config.json.debug
+    dest: /home/ubuntu/Solana/geyser_config.json
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644' # read and write permissions to the owner, and read permissions to the group and others
+
+# This is so we don't take up unecessary space on the server with legacy rust installs
+- name: Remove existing Rust installations
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ ansible_env.HOME }}/.rustup"
+    - "{{ ansible_env.HOME }}/.cargo"
+
+- name: Download Rust installer
+  ansible.builtin.get_url:
+    url: https://sh.rustup.rs
+    dest: /tmp/rustup.sh
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
+- name: Install Rust
+  ansible.builtin.shell: "/tmp/rustup.sh -y --default-toolchain {{ geyser_rust_version }}"
+  args:
+    executable: /bin/bash
+  become: false
+  become_user: "{{ remote_user }}"
+
+- name: Source Rust environment
+  ansible.builtin.shell: source $HOME/.cargo/env
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: false
+  become_user: "{{ remote_user }}"

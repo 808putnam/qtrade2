@@ -1,0 +1,41 @@
+- name: Ensure ec2-user exists
+  ansible.builtin.user:
+    name: ec2-user
+    shell: /bin/bash
+    home: /home/ec2-user
+    createhome: true
+    groups: adm,cdrom,sudo,dip,plugdev,lxd
+    append: true
+    password: "{{ 'temp' | password_hash('sha512') }}"
+  become: true
+
+- name: Allow ec2-user passwordless sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    line: 'ec2-user ALL=(ALL) NOPASSWD: ALL'
+    validate: '/usr/sbin/visudo -cf %s'
+  become: true
+
+- name: Change ownership of ec2-user
+  ansible.builtin.file:
+    path: /home/ec2-user
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: '0755'
+
+- name: Copy profile file to /home/ec2-user/.profile
+  ansible.builtin.copy:
+    src: files/profile
+    dest: /home/ec2-user/.profile
+    owner: ec2-user
+    group: ec2-user
+    mode: '0644'
+
+- name: Copy bashrc file to /home/ec2-user/.bashrc
+  ansible.builtin.copy:
+    src: files/bashrc
+    dest: /home/ec2-user/.bashrc
+    owner: ec2-user
+    group: ec2-user
+    mode: '0644'

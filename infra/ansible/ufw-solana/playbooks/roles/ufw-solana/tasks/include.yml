@@ -1,0 +1,31 @@
+# Explicitly include common variables
+- name: Include common variables
+  include_vars: "../../../../inventory/group_vars/all.yml"
+
+- name: Include all ips based on the region
+  include_vars: "../../../../inventory/group_vars/ny.yml"
+
+# TODO: See original
+
+#- name: Display Current UFW Status
+#  become: true
+#  become_user: root
+#  shell: ufw status
+#  register: output
+
+# # when ufw is inactive, we will enable it and deny all the ports
+# - name: Enable UFW
+#   become: true
+#   become_user: root
+#   ufw:
+#     state: enabled
+#     policy: deny
+#   when: "'inactive' in output.stdout"
+
+# - name: Reload UFW once after all rules are set
+#   become: true
+#   become_user: root
+#   ufw:
+#     state: reloaded
+#   when:
+#     - custom_ip is not defined

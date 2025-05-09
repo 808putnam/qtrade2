@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT-0
+---
+# handlers file for deploy-latitude
+- name: Restart SSH service
+  listen: Restart ssh
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  become_user: root
+  become: true
+
+- name: Restart Docker
+  listen: Restart Docker
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+  become_user: root
+  become: true
+
+- name: Restart chrony
+  listen: Restart chrony
+  ansible.builtin.service:
+    name: chrony
+    state: restarted
+  become_user: root
+  become: true
+
+- name: Restart fail2ban
+  listen: Restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted
+  become_user: root
+  become: true

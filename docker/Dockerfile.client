@@ -1,0 +1,299 @@
+# syntax=docker/dockerfile:1
+
+# TODO: Get this staged appropriately
+# Define build argument for DataDog API key.
+# This will need to be passed in from command line.
+# Example: docker build --build-arg DD_API_KEY=$DD_API_KEY -t my_image .
+# ARG DD_API_KEY
+
+############################
+# Stage 1: Builder
+############################
+# FROM ghcr.io/808putnam/qtrade-build:0.1.1 as builder
+FROM ghcr.io/808putnam/qtrade-dev:0.1.48 as builder
+
+# setup environment
+RUN mkdir -p /app/qtrade
+WORKDIR /app/qtrade
+
+# manually specify directories so Docker can
+# better utilize it's caching mechanism
+COPY anchor               /app/qtrade/anchor
+COPY bx                   /app/qtrade/bx
+COPY orca                 /app/qtrade/orca
+COPY pyth                 /app/qtrade/pyth
+COPY qtrade-client        /app/qtrade/qtrade-client
+COPY qtrade-custom-checks /app/qtrade/qtrade-custom-checks
+COPY qtrade-runtime       /app/qtrade/qtrade-runtime
+COPY qtrade-solver        /app/qtrade/qtrade-solver
+COPY qtrade-streamer      /app/qtrade/qtrade-streamer
+COPY raydium-clmm         /app/qtrade/raydium-clmm
+COPY raydium-cp-swap      /app/qtrade/raydium-cp-swap
+COPY vixen                /app/qtrade/vixen
+COPY Cargo.lock           /app/qtrade/Cargo.lock
+COPY Cargo.toml           /app/qtrade/Cargo.toml
+
+# build
+WORKDIR /app/qtrade/qtrade-client
+RUN source ~/.profile \
+    && cargo build --release
+
+############################
+# Stage 2: Final
+############################
+# IMPORTANT: We are using ubuntu 20.04:
+# 1. Solana recommends ubuntu 20.04.
+# 2. We need an official version supported by deadsnakes ppp (see below)
+#    for python installations.
+# 3. Ubuntu 22.04 has moved to OpenSSL 3 Anchor (Solana development) requires OpenSSL 1.1.
+FROM ubuntu:20.04 as release
+
+# TODO:
+# 1. Fix --break-system-packages for pip installs. Best practice with pip
+#    is to install into a vm? Take out --break-system-packages to see error.
+#    Latest update, we do not need this as we have dropped back to bullseye
+#    from bookworm.  We'll leave this in for now as a reminder.
+
+# IMPORTANT NOTES:
+# 1. We mostly only update the .profile file and leave the .bashrc for
+#    prompt settings, bash completion functions, etc.
+#    Reference: https://askubuntu.com/questions/1411833/what-goes-in-profile-and-bashrc
+# 2. We avoid the use of updating the PATH via the Dockerfile ENV command
+#    as this is not available to the RUN commands.  Instead, we update
+#    the PATH via the .profile file. This will require us to "source" the
+#    .profile file when, for instance, we want to verify a tool we just installed
+#    that depends on being in a path setting just made to .profile.
+
+# IMPORTANT: We get a more familiar shell and one that is more compliant
+#            to the installs below (e.g., asdf won't work with sh) if we
+#            use bash instead of sh.
+# References:
+# https://stackoverflow.com/questions/20635472/using-the-run-instruction-in-a-dockerfile-with-source-does-not-work
+# https://docs.docker.com/engine/reference/builder/#shell
+SHELL ["/bin/bash", "-c"]
+
+# If you change this, search on 'root' to update commands
+# such as ENV which do not have access to $HOME and hence
+# need to hard-code 'root' in $PATH settings, etc.
+USER root
+
+# Keep all our clutter in /tmp (we'll try to clean it all up)
+WORKDIR /tmp
+
+# Define the exact versions for this build
+# Last version that supports python 3.10 which is required by openqaoa
+ARG AWS_CLI_VERSION=2.22.0
+ARG CVXPY_VERSION=1.6.0
+ARG OPENQAOA_VERSION=0.2.6
+ARG PROTOC_VERSION=30.2
+
+# Install needed packages
+# We use this table to track why a given package is installed
+#
+# | Package              | Dependency For   | Notes                                                       |
+# |----------------------|------------------|-------------------------------------------------------------|
+# | bash-completion      | See notes        | General development                                         |
+# | build-essential      | See notes        | General development, pyenv for building full python, solana |
+# | clang                | See notes        | General development, solana                                 |
+# | cmake                | See notes        | General development, solana                                 |
+# | curl                 | See notes        | General development, pyenv for building full python         |
+# | gdb                  | See notes        | General development                                         |
+# | git                  | See notes        | General development                                         |
+# | jq                   | See notes        | General development                                         |
+# | libbz2-dev           | See notes        | pyenv for building full python                              |
+# | liblzma-dev          | See notes        | General development, pyenv for building full python         |
+# | libffi-dev           | See notes        | General development, pyenv for building full python         |
+# | libncursesw5-dev     | See notes        | General development, pyenv for building full python         |
+# | libprotobuf-dev      | solana           |                                                             |
+# | libreadline-dev      | See notes        | General development, pyenv for building full python         |
+# | libsqlite3-dev       | See notes        | General development, pyenv                                  |
+# | libsasl2-dev.        | yellowstone-grpc |                                                             |
+# | libssl-dev           | See notes        | General development, pyenv, solana                          |
+# | libudev-dev          | anchor, solana   |                                                             |
+# | libxml2-dev          | See notes        | General development, pyenv for building full python         |
+# | libxmlsec1-dev       | See notes        | General development, pyenv for building full python         |
+# | libzstd-dev          | firedancer       |                                                             |
+# | llvm                 | solana           |                                                             |
+# | locales-all          | pyenv            |                                                             |
+# | mariadb-client       | See notes        | General development                                         |
+# | postgresql           | See notes        | Solana geyser plugin development, database development      |
+# | postgresql-contrib   | See notes        | Solana geyser plugin development, database development      |
+# | pkg-config           | See notes        | General development, solana                                 |
+# | protobuf-compiler    | solana           |                                                             |
+# | python3-dev          | See notes        | General development                                         |
+# | python3-pip          | See notes        | General development                                         |
+# | python3-venv         | See notes        | General development                                         |
+# | redis-tools          | See notes        | General development                                         |
+# | sshpass              | See notes        | General development                                         |
+# | tk-dev               | See notes        | General development, pyenv for building full python         |
+# | unzip                | See notes        | General development                                         |
+# | wget                 | See notes        | General development                                         |
+# | xz-utils             | See notes        | General development, pyenv for building full python         |
+# | zip                  | See notes        | General development                                         |
+# | zlib1g-dev           | See notes        | General development, pyenv for building full python, solana |
+
+############################
+# The deadsnakes PPA (Personal Package Archive) is a repository maintained by the
+# deadsnakes team that provides newer versions of Python that are not available
+# in the default Ubuntu repositories. This PPA is often used to install and
+# manage multiple versions of Python on Ubuntu systems.
+#
+# The software-properties-common package is required because it provides the
+# add-apt-repository command, which is used to add PPAs (Personal Package Archives)
+# to your system. In this case, it is used to add the deadsnakes PPA.
+# openqoa requires python 3.8 - 3.10
+############################
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install \
+    python3.10-dev \
+    python3.10-venv \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
+    && update-alternatives --set python3 /usr/bin/python3.10
+
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install \
+    bash-completion \
+    build-essential \
+    clang \
+    cmake \
+    curl \
+    gdb \
+    git \
+    jq \
+    libbz2-dev \
+    liblzma-dev \
+    libffi-dev \
+    libncursesw5-dev \
+    libprotobuf-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libsasl2-dev \
+    libssl-dev \
+    libudev-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libzstd-dev \
+    llvm \
+    locales-all \
+    mariadb-client \
+    pkg-config \
+    postgresql \
+    postgresql-contrib \
+    protobuf-compiler \
+    redis-tools \
+    sshpass \
+    tk-dev \
+    unzip \
+    wget \
+    xz-utils \
+    zip \
+    zlib1g-dev \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+############################
+# Install and upgrade pip
+# Having the latest pip helps speed up pip installs
+############################
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3.10 get-pip.py \
+    && update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.10 1 \
+    && update-alternatives --set pip3 /usr/local/bin/pip3.10
+RUN python3 -m pip install --upgrade pip
+
+############################
+# AWS CLI
+############################
+# References:
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+# https://docs.aws.amazon.com/cli/latest/userguide/getting-started-version.html
+# https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && aws --version \
+    && rm -rvf aws \
+    && rm awscliv2.zip
+
+############################
+# Install Python build tools
+############################
+RUN source ~/.profile \
+&& python3 -m pip install --upgrade pip setuptools wheel build \
+&& python3 -m build --help
+
+############################
+# Build and install the qtrade package
+############################
+COPY qtrade-arbitrage /app/qtrade-arbitrage
+WORKDIR /app/qtrade-arbitrage
+RUN python3 -m build
+RUN pip3 install dist/*.whl
+WORKDIR /tmp
+
+############################
+# cvxpy
+############################
+RUN python3 -m pip install cvxpy==${CVXPY_VERSION}
+
+############################
+# Julia
+# References:
+# https://julialang.org/downloads/
+# https://julialang.org/downloads/platform/
+# Notes:
+# 1. We copy the Julia libs into a known location and reference it with
+#    LD_LIBRARY_PATH. This is for the jlrs crate.
+# 2. We use Julia 1.7 as this is the version referenced in the Julia CFMMRouter package.
+############################
+RUN curl -LOS https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.3-linux-x86_64.tar.gz \
+    && tar -xzf julia-1.7.3-linux-x86_64.tar.gz \
+    && cp -r ./julia-1.7.3 /root/.julia \
+    && rm -rvf ./julia-1.7.3 \
+    && echo 'export PATH=$PATH:/root/.julia/bin' >> ~/.profile \
+    && source ~/.profile \
+    && julia --version \
+    && cp -R /root/.julia/lib/. /usr/local/lib \
+    && echo 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib' >> ~/.profile
+
+############################
+# openqaoa
+# Notes:
+# 1. openqaoa requires python 3.8 - 3.10
+############################
+RUN python3 -m pip install openqaoa==${OPENQAOA_VERSION}
+
+############################
+# PostgreSQL
+# Debian Bullseye typically includes PostgreSQL version 13.
+############################
+
+############################
+# Protocol Buffers Compiler (protoc)
+############################
+RUN curl -LOS https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+    && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /usr/local \
+    && rm protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+    && protoc --version
+
+# setup user
+RUN useradd -ms /bin/bash qtrade
+
+# setup environment
+RUN mkdir -p /app/qtrade-client
+RUN mkdir -p /app/qtrade-client/config
+RUN chown -R qtrade:qtrade /app/qtrade-client
+RUN chown -R qtrade:qtrade /app/qtrade-client/config
+
+WORKDIR /app/qtrade
+
+COPY docker/docker-entrypoint.sh                             /app/qtrade-client/docker-entrypoint.sh
+COPY qtrade-client/config/vixen.toml                         /app/qtrade-client/config/vixen.toml
+COPY qtrade-client/config/wallet_config.ini                  /app/qtrade-client/config/wallet_config.ini
+COPY --from=builder /app/qtrade/target/release/qtrade-client /app/qtrade-client/qtrade-client
+
+ENTRYPOINT [ "/app/qtrade-client/docker-entrypoint.sh" ]

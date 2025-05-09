@@ -1,0 +1,4 @@
+---
+- name: Concatenate UFW rules
+  set_fact:
+    all_ufw_rules: "{{ ssh_ufw_rules + solana_ufw_rules + solana_local_rules }}"

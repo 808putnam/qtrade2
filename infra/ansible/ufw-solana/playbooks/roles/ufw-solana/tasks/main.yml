@@ -1,0 +1,19 @@
+# Currently not used as we have an alternative approach for this in
+# infra/ansible/bare-metal/roles/bare-metal/tasks/password_authentication.yml
+# - name: Import bm_setup tasks
+#   ansible.builtin.import_tasks: bm_setup.yaml
+
+- name: Import prep tasks
+  ansible.builtin.import_tasks: prep.yml
+
+- name: Import include tasks
+  ansible.builtin.import_tasks: include.yml
+
+- name: Import debug tasks
+  ansible.builtin.import_tasks: debug.yml
+
+- name: Import concat tasks
+  ansible.builtin.import_tasks: concat.yml
+
+- name: Import ufw tasks
+  ansible.builtin.import_tasks: ufw.yml

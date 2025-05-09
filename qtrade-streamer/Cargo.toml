@@ -14,7 +14,7 @@ toml = { workspace = true }
 # tracing = "0.1.40"
 tracing = { workspace = true}
 # tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
+tracing-subscriber = { workspace = true }
 # yellowstone-vixen = { workspace = true, features = ["stream"] }
 yellowstone-vixen = { path = "../vixen/crates/runtime", features = ["stream"] }
 # yellowstone-vixen-parser = { workspace = true, features = [

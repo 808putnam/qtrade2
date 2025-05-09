@@ -1,0 +1,10 @@
+- name: Ufw reload
+  become: true
+  become_user: root
+  community.general.ufw:
+    state: reloaded
+
+- name: Restart sshd
+  ansible.builtin.systemd:
+    name: ssh
+    state: restarted
