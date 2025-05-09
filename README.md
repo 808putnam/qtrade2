@@ -3,7 +3,7 @@
 # Welcome to qtrade
 *A full stack crypto arbitrage solution - streaming infra, optimization engine, transaction builder, monitoring with Datadog and OpenTelemetry, and hybrid deployment via Ansible and GitHub Actions.*
 
-For more information, check out the [documentation](https://808putnam.gitbook.io/qtrade2).
+For more information, check out the [documentation](https://808putnam.gitbook.io/qtrade).
 
 ## streaming infra
 At the core of *qtrade* is a custom bare-metal Solana RPC node, enhanced with a Yellowstone Geyser plugin to enable high-throughput data streaming. Real-time liquidity data from Raydium and Orca is captured and ingested using Yellowstone Vixen, which models DEX pool reserves with sub-second latency—laying the groundwork for accurate and timely arbitrage opportunities.
