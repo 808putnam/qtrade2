@@ -20,6 +20,3 @@ At the core of *qtrade* is a custom bare-metal Solana RPC node, enhanced with a 
 ## hybrid deployment via Ansible and GitHub Actions
 *qtrade*'s deployment is automated using a combination of GitHub Actions and Ansible. GitHub Actions orchestrate the entire deployment pipeline, ensuring seamless integration and continuous delivery. Ansible handles the configuration and provisioning of services, enabling consistent and scalable deployments across environments with minimal manual intervention.
 
-## welcome developers!
-
-*Launch the qtrade Codespace to get started.*
