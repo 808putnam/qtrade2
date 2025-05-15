@@ -32,6 +32,23 @@ LogRateLimitIntervalSec=0
 # PATH ensures the service can find required binaries, including Solana CLI
 Environment="PATH=/home/ubuntu/.local/share/solana/install/active_release/bin:/home/ubuntu/.local/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.nvm/versions/node/v22.14.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
+# Set working directory for the service
+WorkingDirectory=/home/ubuntu
+
+# Ensure the service keeps running and doesn't stop when you log out
+KillMode=process
+KillSignal=SIGINT
+TimeoutStopSec=90
+
+# Standard output and error log configuration
+StandardOutput=journal
+StandardError=journal
+
+# Make sure the service doesn't stop when terminal closes
+TTYPath=/dev/null
+TTYReset=no
+TTYVHangup=no
+
 # The command to start the service
 ExecStart=/home/ubuntu/scripts/rpc.sh
 

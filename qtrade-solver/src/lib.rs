@@ -3,23 +3,281 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::types::PyAny;
 use pyo3::types::PyList;
-use serde::{Serialize, Deserialize};
 use spl_pod::solana_pubkey::Pubkey;
+use anyhow::Result;
+use opentelemetry::global;
+use opentelemetry::trace::Tracer;
+use qtrade_shared_types::ArbitrageResult;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::time::sleep;
+use tokio::sync::mpsc;
+use tracing::{error, info};
+use tokio::sync::Mutex;
+use lazy_static::lazy_static;
+use qtrade_lander;
+use async_trait::async_trait;
+
+// Add our DEX quoting module
+pub mod dex;
+
+// Define placeholder structs for different pool data types
+// These would be replaced with actual data structures from your project
+
+/// Placeholder for Orca Whirlpool data structure
+#[derive(Debug)]
+struct OrcaWhirlpoolData {
+    pub sqrt_price: u128,
+    pub tick_current_index: i32,
+    pub liquidity: u128,
+    pub fee_rate: u16,
+    pub tick_spacing: u16,
+    // Add other fields as needed
+}
+
+/// Placeholder for Raydium CPMM data structure
+#[derive(Debug)]
+struct RaydiumCpmmData {
+    pub token_a_amount: u64,
+    pub token_b_amount: u64,
+    pub fee_rate: u16,
+    // Add other fields as needed
+}
+
+/// Placeholder for Raydium CLMM data structure
+#[derive(Debug)]
+struct RaydiumClmmData {
+    pub sqrt_price: u128,
+    pub tick_current_index: i32,
+    pub liquidity: u128,
+    pub fee_rate: u16,
+    pub tick_spacing: u16,
+    // Add other fields as needed
+}
 
 // Define a type alias for the pool entries
 pub type PoolEntry = (Pubkey, Box<dyn std::any::Any + Send + Sync>);
 
-/// Result of the arbitrage optimization calculation
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ArbitrageResult {
-    /// Delta values (tender amounts) for each pool
-    pub deltas: Vec<Vec<f64>>,
-    /// Lambda values (receive amounts) for each pool
-    pub lambdas: Vec<Vec<f64>>,
-    /// A-matrix that maps global to local indices
-    pub a_matrices: Vec<Vec<Vec<f64>>>,
-    /// Status of the optimization problem
-    pub status: String,
+const SOLVER: &str = "solver";
+const CHECK_INTERVAL: Duration = Duration::from_secs(60);
+const QTRADE_SOLVER_TRACER_NAME: &str = "qtrade_solver";
+
+// Global channel for passing arbitrage results from solver to lander
+lazy_static! {
+    pub static ref ARBITRAGE_SENDER: Mutex<mpsc::Sender<ArbitrageResult>> = {
+        let (tx, rx) = mpsc::channel::<ArbitrageResult>(100);
+
+        // Store receiver somewhere accessible to lander
+        qtrade_lander::init_arbitrage_receiver(rx);
+
+        // Wrap the sender in a Mutex for thread-safe access
+        Mutex::new(tx)
+    };
+}
+
+// Create a trait that pools need to implement to be used with the solver
+// Use async_trait to ensure compatibility with implementations
+#[async_trait::async_trait]
+pub trait PoolCache: Send + Sync {
+    async fn get_all_entries_as_slice(&self) -> Vec<PoolEntry>;
+}
+
+/// Periodically performs convex optimization tasks.
+///
+/// This function sets up a timer to periodically:
+/// - Read the pool reserves cache
+/// - Read the oracle cache
+/// - Call appropriate DEX module APIs for quotes based on reserves
+/// - Determine arbitrage opportunities
+/// - Output results to the lander queue
+pub async fn run_solver<T: PoolCache + 'static>(pool_cache: Arc<T>) -> Result<()> {
+    let tracer = global::tracer(QTRADE_SOLVER_TRACER_NAME);
+    // Clone the pool_cache Arc once outside the loop to avoid lifetime issues
+    let pool_cache_ref = Arc::clone(&pool_cache);
+
+    loop {
+        let span_name = format!("{}::run_solver", SOLVER);
+        // Clone another reference to the pool_cache for this iteration
+        let pool_cache_iteration = Arc::clone(&pool_cache_ref);
+
+        let result: Result<(), anyhow::Error> = tracer.in_span(span_name, move |_cx| async move {
+            // Read pool reserves cache
+            info!("Reading pool reserves cache...");
+
+            // Get entries from the PoolCache instance
+            let pool_entries = pool_cache_iteration.get_all_entries_as_slice().await;
+            info!("Retrieved {} pool entries from cache", pool_entries.len());
+
+            // Call appropriate DEX module APIs for quotes based on reserves
+            info!("Calling DEX module APIs for quotes based on reserves...");
+            // Get quotes from DEXes using our new module
+            let quotes = get_dex_quotes(&pool_entries)?;
+            info!("Retrieved {} quotes from DEXes", quotes.len());
+
+            // Determine arbitrage opportunities
+            info!("Determining arbitrage opportunities...");
+
+            // We need to use the original entries directly rather than trying to clone them
+            // The issue is that Box<dyn Any + Send + Sync> doesn't implement Clone
+            // Since the solve function takes a reference, we can pass references to the original entries
+            let solver_entries = pool_entries;
+
+            match solve(&solver_entries) {
+                Ok(result) => {
+                    info!("Arbitrage opportunities determined successfully with status: {}", result.status);
+
+                    // Output results to lander queue
+                    info!("Sending arbitrage results to lander queue...");
+
+                    // Acquire the mutex lock to access the sender
+                    let sender = ARBITRAGE_SENDER.lock().await;
+                    if let Err(e) = sender.send(result).await {
+                        error!("Failed to send arbitrage result to lander: {:?}", e);
+                    } else {
+                        info!("Successfully sent arbitrage result to lander queue");
+                    }
+                },
+                Err(e) => {
+                    error!("Failed to determine arbitrage opportunities: {:?}", e);
+                }
+            }
+
+            // Output completion message
+            info!("Arbitrage processing cycle complete");
+
+            Ok(())
+        }).await;
+
+        // result
+        if let Err(e) = result {
+            error!("Error running solver: {:?}", e);
+        }
+
+        // Wait for specified duration before running the check again
+        sleep(CHECK_INTERVAL).await;
+    }
+}
+
+/// Extract pool reserves from pool data based on DEX type
+fn extract_pool_reserves(pool_data: &Box<dyn std::any::Any + Send + Sync>, dex_type: dex::types::DexType) -> Option<dex::types::PoolReserves> {
+    match dex_type {
+        dex::types::DexType::Orca => {
+            // Try to extract Orca Whirlpool data
+            // This is just an example - you'll need to adjust based on actual data structure
+            if let Some(orca_data) = pool_data.downcast_ref::<OrcaWhirlpoolData>() {
+                Some(dex::types::PoolReserves {
+                    sqrt_price: orca_data.sqrt_price,
+                    tick_current_index: orca_data.tick_current_index,
+                    liquidity: orca_data.liquidity,
+                    fee_rate: orca_data.fee_rate,
+                    tick_spacing: orca_data.tick_spacing,
+                    token_a_reserves: None, // Orca doesn't use these directly
+                    token_b_reserves: None,
+                })
+            } else {
+                // If we can't downcast to Orca data, log a warning and return default
+                tracing::warn!("Could not extract Orca pool reserves data");
+                Some(dex::types::PoolReserves::default())
+            }
+        },
+        dex::types::DexType::RaydiumCpmm => {
+            // For CPMM-style AMMs, we need token reserves
+            if let Some(cpmm_data) = pool_data.downcast_ref::<RaydiumCpmmData>() {
+                Some(dex::types::PoolReserves {
+                    sqrt_price: 0, // Not used by CPMM
+                    tick_current_index: 0, // Not used by CPMM
+                    liquidity: 0, // Not used by CPMM
+                    fee_rate: cpmm_data.fee_rate,
+                    tick_spacing: 0, // Not used by CPMM
+                    token_a_reserves: Some(cpmm_data.token_a_amount),
+                    token_b_reserves: Some(cpmm_data.token_b_amount),
+                })
+            } else {
+                tracing::warn!("Could not extract Raydium CPMM pool reserves data");
+                Some(dex::types::PoolReserves::default())
+            }
+        },
+        // Add other DEX type handlers here
+        _ => {
+            // For unsupported types, just return default values for now
+            tracing::warn!("Unsupported DEX type for pool reserves extraction: {:?}", dex_type);
+            Some(dex::types::PoolReserves::default())
+        }
+    }
+}
+
+/// Get quotes from DEXes for all pools
+///
+/// This function takes the pool entries and returns a vector of quotes from each DEX
+/// The quotes can then be used to determine arbitrage opportunities
+pub fn get_dex_quotes(pool_entries: &[PoolEntry]) -> Result<Vec<dex::types::SwapQuote>, anyhow::Error> {
+    let mut quotes = Vec::new();
+
+    // Use tracing for better diagnostic information
+    tracing::debug!("Getting DEX quotes for {} pools", pool_entries.len());
+
+    for (pool_address, pool_data) in pool_entries {
+        // Determine the DEX type based on the pool address
+        let dex_type = dex::determine_dex_type(pool_address);
+        tracing::debug!("Pool {:?} identified as DEX type: {:?}", pool_address, dex_type);
+
+        // Extract pool reserves based on DEX type
+        if let Some(pool_reserves) = extract_pool_reserves(pool_data, dex_type) {
+            // Create a quoter for this DEX type
+            let quoter = dex::create_dex_quoter(dex_type);
+
+            // Get quotes for varying input amounts to better understand the price impact curve
+            let input_amounts = [1_000_000u64, 10_000_000u64, 100_000_000u64]; // 1, 10, 100 units with 6 decimal places
+            let slippage_bps = 30; // 0.3% slippage tolerance
+
+            for &amount_in in &input_amounts {
+                // Get quote for A->B
+                match quoter.get_swap_quote(
+                    pool_address,
+                    &pool_reserves,
+                    amount_in,
+                    true, // A to B
+                    slippage_bps,
+                ) {
+                    Ok(quote) => {
+                        tracing::debug!(
+                            "A->B quote for pool {:?}: {} in, {} out, {} fee, {:.4}% impact",
+                            pool_address, quote.amount_in, quote.amount_out, quote.fee_amount, quote.price_impact * 100.0
+                        );
+                        quotes.push(quote);
+                    },
+                    Err(e) => {
+                        tracing::warn!("Failed to get A->B quote for pool {:?}: {}", pool_address, e);
+                    }
+                }
+
+                // Get quote for B->A
+                match quoter.get_swap_quote(
+                    pool_address,
+                    &pool_reserves,
+                    amount_in,
+                    false, // B to A
+                    slippage_bps,
+                ) {
+                    Ok(quote) => {
+                        tracing::debug!(
+                            "B->A quote for pool {:?}: {} in, {} out, {} fee, {:.4}% impact",
+                            pool_address, quote.amount_in, quote.amount_out, quote.fee_amount, quote.price_impact * 100.0
+                        );
+                        quotes.push(quote);
+                    },
+                    Err(e) => {
+                        tracing::warn!("Failed to get B->A quote for pool {:?}: {}", pool_address, e);
+                    }
+                }
+            }
+        } else {
+            tracing::warn!("Could not extract pool reserves for pool {:?}", pool_address);
+        }
+    }
+
+    tracing::info!("Generated {} quotes from {} pools", quotes.len(), pool_entries.len());
+    Ok(quotes)
 }
 
 pub fn solve(pool_entries: &[PoolEntry]) -> Result<ArbitrageResult, Box<dyn std::error::Error>> {
@@ -252,19 +510,10 @@ pub fn solve2() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        /*
-        let psi: Array1<f64> = a.iter()
-            .zip(&deltas)
-            .zip(&lambdas)
-            .map(|((a_i, d), l)| a_i.dot(&(l - d)));
-        .sum();
-        */
-
         Ok(())
     });
 
     Ok(())
-
     /*
 
 
@@ -417,4 +666,3 @@ pub fn solve2() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
     */
 }
-

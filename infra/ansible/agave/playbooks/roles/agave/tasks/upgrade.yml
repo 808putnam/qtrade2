@@ -46,6 +46,14 @@
     group: ubuntu
     mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
 
+- name: Copy monitor-validator.sh file to /home/ubuntu/scripts/monitor-validator.sh
+  ansible.builtin.copy:
+    src: files/monitor-validator.sh
+    dest: /home/ubuntu/scripts/monitor-validator.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755' # read, write, and execute permissions to the owner, and read and execute permissions to the group and others
+
 - name: Ensure /home/ubuntu/files exists
   ansible.builtin.file:
     path: /home/ubuntu/files
@@ -93,3 +101,11 @@
     owner: ubuntu
     group: ubuntu
     mode: '0644' # read and write permissions to the owner, and read permissions to the group and others
+
+- name: Setup cron job for validator monitoring
+  ansible.builtin.cron:
+    name: "Monitor Agave Validator"
+    user: "ubuntu"
+    minute: "*/5"
+    job: "/home/ubuntu/scripts/monitor-validator.sh"
+    state: present

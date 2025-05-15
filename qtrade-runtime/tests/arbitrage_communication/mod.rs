@@ -1,7 +1,7 @@
 //! Tests for the communication channel between solver and lander components
-use qtrade_runtime::lander;
-use qtrade_runtime::solver;
-use qtrade_solver::ArbitrageResult;
+use qtrade_lander;
+use qtrade_solver;
+use qtrade_shared_types::ArbitrageResult;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::timeout;
@@ -17,7 +17,7 @@ async fn test_arbitrage_channel_communication() {
     };
 
     // Access the ARBITRAGE_SENDER
-    let sender = solver::ARBITRAGE_SENDER.lock().await;
+    let sender = qtrade_solver::ARBITRAGE_SENDER.lock().await;
 
     // Send the mock result through the channel
     sender.send(mock_result.clone()).await.expect("Failed to send mock result");
@@ -29,7 +29,7 @@ async fn test_arbitrage_channel_communication() {
     let (tx, rx) = mpsc::channel::<ArbitrageResult>(10);
 
     // Initialize the receiver in the lander
-    lander::init_arbitrage_receiver(rx);
+    qtrade_lander::init_arbitrage_receiver(rx);
 
     // Send another mock result directly to the new channel
     let mock_result2 = ArbitrageResult {
@@ -53,12 +53,12 @@ async fn test_process_queue() -> bool {
     for _ in 0..10 {
         // Check for messages from the channel
         {
-            let mut receiver_guard = lander::ARBITRAGE_RECEIVER.lock().unwrap();
+            let mut receiver_guard = qtrade_lander::ARBITRAGE_RECEIVER.lock().unwrap();
             if let Some(ref mut rx) = *receiver_guard {
                 match rx.try_recv() {
                     Ok(arbitrage_result) => {
                         // Successfully received a result, add it to the queue
-                        let _ = lander::enqueue_arbitrage_result(arbitrage_result);
+                        let _ = qtrade_lander::enqueue_arbitrage_result(arbitrage_result);
                     }
                     Err(_) => {
                         // No more messages or error, continue
@@ -68,7 +68,7 @@ async fn test_process_queue() -> bool {
         }
 
         // Process an item from the queue
-        if let Some(_) = lander::dequeue_arbitrage_result() {
+        if let Some(_) = qtrade_lander::dequeue_arbitrage_result() {
             // Successfully processed an item from the queue
             return true;
         }

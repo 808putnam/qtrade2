@@ -21,6 +21,7 @@ path = "tests/arbitrage_communication/mod.rs"
 anchor-client = { path = "../anchor/client" }
 anchor-lang = { path = "../anchor/lang" }
 anyhow = { workspace = true }
+async-trait = {workspace = true }
 base64 = { workspace = true }
 bincode = { workspace = true }
 borsh = { workspace = true }
@@ -33,6 +34,10 @@ opentelemetry = { workspace = true }
 orca_whirlpools_client = { path = "../orca/client" }
 pyth-sdk-solana = { path = "../pyth/pyth-sdk-solana" }
 qtrade-solver = { path = "../qtrade-solver" }
+qtrade-streamer = { path = "../qtrade-streamer" }
+qtrade-wallets = { path = "../qtrade-wallets" }
+qtrade-lander = { path = "../qtrade-lander" }
+qtrade-shared-types = { path = "../qtrade-shared-types" }
 rand = { workspace = true }
 raydium_amm_v3_client = { path = "../raydium-clmm/client" }
 raydium_cp_swap_client = { path = "../raydium-cp-swap/client" }

@@ -1,38 +1,39 @@
 [package]
 name = "qtrade-streamer"
-description = "Test bed for integrating yellowstone-vixen-parser with Vixen program streams"
-publish = false
+version = "0.1.0"
 edition.workspace = true
-license = "MIT"
-repository = "https://github.com/rpcpool/yellowstone-vixen"
 
 [dependencies]
-# clap = { version = "4.5.4", features = ["derive", "cargo", "wrap_help"] }
-clap = { workspace = true, features = ["derive", "cargo", "wrap_help"] }
-# toml = "0.8.12"
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+borsh = { workspace = true }
+dashmap = { workspace = true }
+lazy_static = { workspace = true }
+log = { workspace = true }
+once_cell = { workspace = true }
+opentelemetry = { workspace = true }
+orca_whirlpools_client = { path = "../orca/client" }
+raydium_amm_v3_client = { path = "../raydium-clmm/client" }
+raydium_cp_swap_client = { path = "../raydium-cp-swap/client" }
+qtrade-solver = { path = "../qtrade-solver" }
+spl-pod = { workspace = true }
+spl-token = { workspace = true }
+thiserror = { workspace = true}
+tokio = { workspace = true }
+tokio-util = { workspace = true }
 toml = { workspace = true }
-# tracing = "0.1.40"
 tracing = { workspace = true}
-# tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-tracing-subscriber = { workspace = true }
-# yellowstone-vixen = { workspace = true, features = ["stream"] }
-yellowstone-vixen = { path = "../vixen/crates/runtime", features = ["stream"] }
-# yellowstone-vixen-parser = { workspace = true, features = [
-#   "proto",
-#   "token-extensions",
-#   "token-program",
-#   "orca",
-#   "raydium"
-# ] }
+yellowstone-vixen = { path = "../vixen/crates/runtime" }
+yellowstone-vixen-core = { path = "../vixen/crates/core" }
 yellowstone-vixen-parser = { path = "../vixen/crates/parser", features = [
   "proto",
-  # qtrade: haven't got this building yet
-  # "token-extensions",
   "token-program",
   "orca",
   "raydium"
 ] }
 
 [build-dependencies]
-# prost-build = "0.13.1"
 prost-build = { workspace = true }
+
+[dev-dependencies]
+yellowstone-vixen-mock = { path = "../vixen/crates/mock" }

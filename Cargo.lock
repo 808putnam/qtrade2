@@ -1667,7 +1667,6 @@ dependencies = [
  "anstyle",
  "clap_lex",
  "strsim 0.11.1",
- "terminal_size",
 ]
 
 [[package]]
@@ -4997,12 +4996,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "qtrade-lander"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.21.7",
+ "bincode",
+ "borsh 0.10.4",
+ "bs58 0.5.1",
+ "chrono",
+ "dashmap 6.1.0",
+ "futures",
+ "futures-util",
+ "lazy_static",
+ "log",
+ "once_cell",
+ "opentelemetry 0.28.0",
+ "qtrade-shared-types",
+ "qtrade-wallets",
+ "rand 0.7.3",
+ "reqwest 0.12.9",
+ "serde",
+ "serde_json",
+ "simplelog",
+ "solana-client",
+ "solana-program 2.1.4",
+ "solana-sdk",
+ "spl-memo 6.0.0",
+ "spl-token 7.0.0",
+ "tokio",
+ "tokio-util 0.7.13",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "qtrade-runtime"
 version = "0.1.0"
 dependencies = [
  "anchor-client",
  "anchor-lang",
  "anyhow",
+ "async-trait",
  "base64 0.21.7",
  "bincode",
  "borsh 0.10.4",
@@ -5016,7 +5052,11 @@ dependencies = [
  "orca_whirlpools_client",
  "prost-build",
  "pyth-sdk-solana",
+ "qtrade-lander",
+ "qtrade-shared-types",
  "qtrade-solver",
+ "qtrade-streamer",
+ "qtrade-wallets",
  "rand 0.7.3",
  "raydium_amm_v3_client",
  "raydium_cp_swap_client",
@@ -5044,31 +5084,79 @@ dependencies = [
 ]
 
 [[package]]
+name = "qtrade-shared-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "qtrade-solver"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "async-trait",
  "aws-config",
  "aws-sdk-braket",
  "clarabel",
  "itertools 0.13.0",
+ "lazy_static",
  "ndarray",
+ "opentelemetry 0.28.0",
+ "orca_whirlpools_core",
  "pyo3",
+ "qtrade-lander",
+ "qtrade-shared-types",
  "serde",
+ "solana-sdk",
  "spl-pod 0.5.0",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
 name = "qtrade-streamer"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
- "clap 4.5.23",
+ "anyhow",
+ "async-trait",
+ "borsh 0.10.4",
+ "dashmap 6.1.0",
+ "lazy_static",
+ "log",
+ "once_cell",
+ "opentelemetry 0.28.0",
+ "orca_whirlpools_client",
  "prost-build",
+ "qtrade-solver",
+ "raydium_amm_v3_client",
+ "raydium_cp_swap_client",
+ "spl-pod 0.5.0",
+ "spl-token 7.0.0",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-util 0.7.13",
  "toml 0.8.19",
  "tracing",
- "tracing-subscriber",
  "yellowstone-vixen",
+ "yellowstone-vixen-core",
+ "yellowstone-vixen-mock",
  "yellowstone-vixen-parser",
+]
+
+[[package]]
+name = "qtrade-wallets"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bs58 0.5.1",
+ "env_logger 0.11.5",
+ "lazy_static",
+ "opentelemetry 0.28.0",
+ "solana-client",
+ "solana-sdk",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -9239,16 +9327,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "terminal_size"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5352447f921fda68cf61b4101566c0bdb5104eff6804d0678e5227580ab6a4e9"
-dependencies = [
- "rustix",
- "windows-sys 0.59.0",
 ]
 
 [[package]]

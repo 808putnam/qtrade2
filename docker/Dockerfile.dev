@@ -419,6 +419,14 @@ RUN source ~/.profile \
     && anchor --version
 
 ############################
+# solana-mcp
+# For some reason we need to sourc ~/.nvm/nvm.sh directly
+# instead of ~/.profile.
+############################
+RUN source ~/.nvm/nvm.sh \
+    && npm install -g solana-mcp
+
+############################
 # Terraform
 ############################
 RUN curl -LOS https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \

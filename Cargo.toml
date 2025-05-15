@@ -11,11 +11,14 @@ members = [
     "orca/macros",
     "pyth/pyth-sdk",
     "pyth/pyth-sdk-solana",
-    "qtrade-runtime",
     "qtrade-client",
     "qtrade-custom-checks",
+    "qtrade-lander",
+    "qtrade-runtime",
+    "qtrade-shared-types",
     "qtrade-solver",
     "qtrade-streamer",
+    "qtrade-wallets",
     "raydium-clmm/client",
     "raydium-clmm/programs/amm",
     "raydium-cp-swap/client",
@@ -29,6 +32,7 @@ members = [
 
 exclude = [
     "raydium-clmm/client",
+    "staging",
 ]
 
 [workspace.package]

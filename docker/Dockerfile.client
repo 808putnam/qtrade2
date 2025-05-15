@@ -10,7 +10,7 @@
 # Stage 1: Builder
 ############################
 # FROM ghcr.io/808putnam/qtrade-build:0.1.1 as builder
-FROM ghcr.io/808putnam/qtrade-dev:0.1.48 as builder
+FROM ghcr.io/808putnam/qtrade-dev:0.1.49 as builder
 
 # setup environment
 RUN mkdir -p /app/qtrade

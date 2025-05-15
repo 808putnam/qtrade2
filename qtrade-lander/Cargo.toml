@@ -1,0 +1,38 @@
+[package]
+name = "qtrade-lander"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+async-trait = { workspace = true }
+base64 = { workspace = true }
+bincode = { workspace = true }
+bs58 = { workspace = true }
+chrono = { workspace = true }
+dashmap = { workspace = true }
+futures = { workspace = true }
+futures-util = { workspace = true }
+lazy_static = { workspace = true }
+log = { workspace = true }
+once_cell = { workspace = true }
+opentelemetry = { workspace = true, features = ["metrics"] }
+rand = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+simplelog = { workspace = true }
+solana-client = { workspace = true }
+solana-program = { workspace = true }
+solana-sdk = { workspace = true }
+spl-memo = { workspace = true }
+spl-token = { workspace = true }
+borsh = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+qtrade-shared-types = { path = "../qtrade-shared-types" }
+qtrade-wallets = { path = "../qtrade-wallets" }
+
+

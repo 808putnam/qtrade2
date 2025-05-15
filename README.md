@@ -1,4 +1,4 @@
-**code snapshot date: May 9, 2025**
+**code snapshot date: May 15, 2025**
 
 # Welcome to QTrade
 *A full stack crypto arbitrage solution - streaming infra, optimization engine, transaction builder, monitoring with Datadog and OpenTelemetry, and hybrid deployment via Ansible and GitHub Actions.*
@@ -19,4 +19,3 @@ At the core of *QTrade* is a custom bare-metal Solana RPC node, enhanced with a 
 
 ## hybrid deployment via Ansible and GitHub Actions
 *QTrade*'s deployment is automated using a combination of GitHub Actions and Ansible. GitHub Actions orchestrate the entire deployment pipeline, ensuring seamless integration and continuous delivery. Ansible handles the configuration and provisioning of services, enabling consistent and scalable deployments across environments with minimal manual intervention.
-
