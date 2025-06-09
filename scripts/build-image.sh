@@ -1,4 +1,18 @@
 #!/bin/bash
+set -e          # Exit immediately if any command fails
+set -u          # Exit if trying to use an undefined variable (catches typos)
+set -o pipefail # Exit if any command in a pipeline fails (not just the last one)
+
+# Initialize variables with default values
+BREAK_SYSTEM_PACKAGES=""
+IMAGE=""
+PUBLISH="none"
+UBUNTU_VERSION=""
+TAG=""
+# Initialize environment variables with fallback to empty string if not set
+# This prevents "unbound variable" errors from set -u when env vars aren't defined
+CR_USER="${CR_USER:-}"
+CR_PAT="${CR_PAT:-}"
 
 # Display help menu
 usage() {
@@ -30,8 +44,14 @@ usage() {
     echo "--help              Displays help menu"
     echo ""
     echo "--image=<option>    Specify the image to build."
-    echo "                       dev    - qtrade-dev:             codespace for development"
     echo "                       client - qtrade-client:          production image for qtrade-client"
+    echo "                       dev    - qtrade-dev:             codespace for development"
+    echo ""
+    echo "--ubuntu=<option>   Specify the ubuntu OS version"
+    echo "                        --image=client: This option is hard-coded to 20.04"
+    echo "                        --image=dev:    This option is mandatory"
+    echo "                        20.04"
+    echo "                        24.04"
     echo ""
     echo "--publish=<option>  Optionally publish build to GitHub or local registry."
     echo "                       Defaults to none."
@@ -60,6 +80,10 @@ case $i in
     IMAGE="${i#*=}"
     shift
     ;;
+    -u|--ubuntu=*)
+    UBUNTU_VERSION="${i#*=}"
+    shift
+    ;;
     -p|--publish=*)
     PUBLISH="${i#*=}"
     shift
@@ -81,8 +105,23 @@ if [[ "$IMAGE" != "client" && "$IMAGE" != "dev" ]]; then
     echo "Invalid -i|--image: $IMAGE"
     usage
 fi
-if [[ "$PUBLISH" == "" ]]; then
-    PUBLISH="none"
+# Ubuntu version is mandatory when you building dev image and hard-coded to 20.04 for client
+if [[ "$IMAGE" == "dev" && "$UBUNTU_VERSION" == "" ]]; then
+    echo "--ubuntu is mandatory when --image is set to dev."
+    usage
+fi
+if [[ "$IMAGE" == "client" ]]; then
+    UBUNTU_VERSION="20.04"
+fi
+if [[ "$UBUNTU_VERSION" != "20.04" && "$UBUNTU_VERSION" != "24.04" ]]; then
+    echo "Invalid -u|--ubuntu: $UBUNTU_VERSION"
+    usage
+fi
+# Set PEP 668 flag for Ubuntu 24.04+
+if [[ "$UBUNTU_VERSION" == "24.04" ]]; then
+    BREAK_SYSTEM_PACKAGES="--break-system-packages"
+else
+    BREAK_SYSTEM_PACKAGES=""
 fi
 if [[ "$PUBLISH" != "github" && "$PUBLISH" != "local" && "$PUBLISH" != "none" ]]; then
     echo "Invalid -p|--publish: $PUBLISH"
@@ -108,7 +147,7 @@ fi
 # Determine Docker image name and Dockerfile path for commands below
 if [[ "$IMAGE" == "dev" ]]; then
     DOCKERFILE_PATH="./docker/Dockerfile.dev"
-    IMAGE_NAME="qtrade-dev"
+    IMAGE_NAME="qtrade-dev-$UBUNTU_VERSION"
 fi
 if [[ "$IMAGE" == "client" ]]; then
     DOCKERFILE_PATH="./docker/Dockerfile.client"
@@ -122,15 +161,20 @@ fi
 # Reference: https://docs.docker.com/engine/reference/commandline/build/#text-files
 cd ..
 
-# If we are not on a GitHub codespace, we need to login to the GitHub Container Registry
-echo $CR_PAT | docker login ghcr.io -u $CR_USER --password-stdin
-
 # Go for the build
 if [[ "$TAG" == "" ]]; then
-     docker build -t $IMAGE_NAME --file $DOCKERFILE_PATH .
+     docker build -t $IMAGE_NAME \
+     --progress=plain \
+     --build-arg UBUNTU_VERSION=$UBUNTU_VERSION \
+     --build-arg BREAK_SYSTEM_PACKAGES="$BREAK_SYSTEM_PACKAGES" \
+     --file $DOCKERFILE_PATH .
      echo "Built: $IMAGE_NAME"
 else
-    docker build -t $IMAGE_NAME:$TAG --file $DOCKERFILE_PATH .
+    docker build -t $IMAGE_NAME:$TAG \
+    --progress=plain \
+    --build-arg UBUNTU_VERSION=$UBUNTU_VERSION \
+    --build-arg BREAK_SYSTEM_PACKAGES="$BREAK_SYSTEM_PACKAGES" \
+    --file $DOCKERFILE_PATH .
     echo "Built: $IMAGE_NAME:$TAG"
 fi
 
@@ -143,7 +187,7 @@ fi
 # registry:2
 # Reference: https://docs.docker.com/registry/deploying/#start-the-registry-automatically
 if [[ "$PUBLISH" == "github" ]]; then
-    docker login ghcr.io -u $CR_USER -p $CR_PAT
+    echo $CR_PAT | docker login ghcr.io -u $CR_USER --password-stdin
     docker image tag $IMAGE_NAME:$TAG ghcr.io/808putnam/$IMAGE_NAME:$TAG
     docker push ghcr.io/808putnam/$IMAGE_NAME:$TAG
     echo "Pushed: $IMAGE_NAME:$TAG to GitHub"

@@ -1,0 +1,42 @@
+[package]
+name = "qtrade-router"
+version = "0.1.0"
+edition.workspace = true
+
+[[test]]
+name = "solve"
+path = "tests/solve/mod.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+# itertools = "0.13.0"
+itertools = { workspace = true }
+# ndarray = "0.16.1"
+ndarray = { workspace = true}
+# clarabel = "0.9.0"
+clarabel = { workspace = true}
+# aws-config = { version = "1.1.7", features = ["behavior-version-latest"] }
+aws-config = { workspace = true, features = ["behavior-version-latest"] }
+# aws-sdk-braket = "1.51.0"
+aws-sdk-braket = { workspace = true}
+# spl-pod = { version = "0.5.0" }
+spl-pod = { workspace = true }
+solana-sdk = { workspace = true }
+# tokio = { version = "1", features = ["full"
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
+qtrade-shared-types = { path = "../qtrade-shared-types" }
+qtrade-relayer = { path = "../qtrade-relayer" }
+
+# Orca DEX dependencies
+orca_whirlpools_core = { path = "../orca/core" }
+opentelemetry = { workspace = true }
+tracing = { workspace = true }
+lazy_static = { workspace = true }
+async-trait = { workspace = true }
+
+# [dependencies.pyo3]
+# version = "0.23.1"
+# # this is necessary to automatically initialize the Python interpreter
+# features = ["auto-initialize"]
+pyo3 = { workspace = true, features = ["auto-initialize"] }

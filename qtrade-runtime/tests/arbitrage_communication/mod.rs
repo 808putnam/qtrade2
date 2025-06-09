@@ -1,6 +1,6 @@
-//! Tests for the communication channel between solver and lander components
-use qtrade_lander;
-use qtrade_solver;
+//! Tests for the communication channel between router and relayer components
+use qtrade_relayer;
+use qtrade_router;
 use qtrade_shared_types::ArbitrageResult;
 use std::time::Duration;
 use tokio::sync::mpsc;
@@ -17,7 +17,7 @@ async fn test_arbitrage_channel_communication() {
     };
 
     // Access the ARBITRAGE_SENDER
-    let sender = qtrade_solver::ARBITRAGE_SENDER.lock().await;
+    let sender = qtrade_router::ARBITRAGE_SENDER.lock().await;
 
     // Send the mock result through the channel
     sender.send(mock_result.clone()).await.expect("Failed to send mock result");
@@ -28,8 +28,8 @@ async fn test_arbitrage_channel_communication() {
     // Create a direct channel to test the queue functionality
     let (tx, rx) = mpsc::channel::<ArbitrageResult>(10);
 
-    // Initialize the receiver in the lander
-    qtrade_lander::init_arbitrage_receiver(rx);
+    // Initialize the receiver in the relayer
+    qtrade_relayer::init_arbitrage_receiver(rx);
 
     // Send another mock result directly to the new channel
     let mock_result2 = ArbitrageResult {
@@ -41,24 +41,24 @@ async fn test_arbitrage_channel_communication() {
 
     tx.send(mock_result2.clone()).await.expect("Failed to send second mock result");
 
-    // Run test lander function to process the queue (simplified version of run_lander)
+    // Run test relayer function to process the queue (simplified version of run_relayer)
     let result = timeout(Duration::from_secs(1), test_process_queue()).await;
 
     assert!(result.is_ok(), "Timed out waiting for queue processing");
 }
 
-// Simplified test version of the lander's queue processing logic
+// Simplified test version of the relayer's queue processing logic
 async fn test_process_queue() -> bool {
     // We'll try to process up to 10 items from the queue, or until it's empty
     for _ in 0..10 {
         // Check for messages from the channel
         {
-            let mut receiver_guard = qtrade_lander::ARBITRAGE_RECEIVER.lock().unwrap();
+            let mut receiver_guard = qtrade_relayer::ARBITRAGE_RECEIVER.lock().unwrap();
             if let Some(ref mut rx) = *receiver_guard {
                 match rx.try_recv() {
                     Ok(arbitrage_result) => {
                         // Successfully received a result, add it to the queue
-                        let _ = qtrade_lander::enqueue_arbitrage_result(arbitrage_result);
+                        let _ = qtrade_relayer::enqueue_arbitrage_result(arbitrage_result);
                     }
                     Err(_) => {
                         // No more messages or error, continue
@@ -68,7 +68,7 @@ async fn test_process_queue() -> bool {
         }
 
         // Process an item from the queue
-        if let Some(_) = qtrade_lander::dequeue_arbitrage_result() {
+        if let Some(_) = qtrade_relayer::dequeue_arbitrage_result() {
             // Successfully processed an item from the queue
             return true;
         }

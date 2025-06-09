@@ -1,0 +1,126 @@
+- name: Append MC1_BS58 environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MC1_BS58="{{ mc1_bs58 }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append MC1_JSON environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MC1_JSON="{{ mc1_json }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append MC2_BS58 environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MC2_BS58="{{ mc2_bs58 }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append MC2_JSON environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MC2_JSON="{{ mc2_json }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append MCO_BS58 environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MCO_BS58="{{ mco_bs58 }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append MCO_JSON environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export MCO_JSON="{{ mco_json }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append ALCHEMY_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export ALCHEMY_API_KEY="{{ alchemy_api_key }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append BLOXROUTE_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export BLOXROUTE_API_KEY="{{ bloxroute_auth_header }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append COINGECKO_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export COINGECKO_API_KEY="{{ coingecko_api_key }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append HELIUS_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export HELIUS_API_KEY="{{ helius_api_key }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append NEXTBLOCK_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export NEXTBLOCK_API_KEY="{{ nextblock_api_key }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append QUICKNODE_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export QUICKNODE_API_KEY="{{ quicknode_api_key }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append USERIFY_API_ID environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export USERIFY_API_ID="{{ userify_api_id }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+
+- name: Append USERIFY_API_KEY environment variable to .bashrc for ubuntu user
+  become: true
+  ansible.builtin.lineinfile:
+    path: /home/ubuntu/.bashrc
+    line: 'export USERIFY_API_KEY="{{ userify_api_key }}"'
+    create: true
+    owner: ubuntu
+    mode: "0644"
+

@@ -1,8 +1,6 @@
 [package]
 name = "qtrade-runtime"
 version = "0.1.0"
-# qtrade: removing this
-# rust-version = "1.75.0"
 edition.workspace = true
 
 [[test]]
@@ -33,10 +31,10 @@ once_cell = { workspace = true }
 opentelemetry = { workspace = true }
 orca_whirlpools_client = { path = "../orca/client" }
 pyth-sdk-solana = { path = "../pyth/pyth-sdk-solana" }
-qtrade-solver = { path = "../qtrade-solver" }
-qtrade-streamer = { path = "../qtrade-streamer" }
+qtrade-indexer = { path = "../qtrade-indexer" }
+qtrade-relayer = { path = "../qtrade-relayer" }
+qtrade-router = { path = "../qtrade-router" }
 qtrade-wallets = { path = "../qtrade-wallets" }
-qtrade-lander = { path = "../qtrade-lander" }
 qtrade-shared-types = { path = "../qtrade-shared-types" }
 rand = { workspace = true }
 raydium_amm_v3_client = { path = "../raydium-clmm/client" }
@@ -47,6 +45,7 @@ serde_json = { workspace = true }
 simplelog = { workspace = true}
 solana-trader-client-rust = { path = "../bx" }
 solana-client = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 spl-pod = { workspace = true }
 solana-sdk = { workspace = true}
 spl-token = { workspace = true }
@@ -73,3 +72,4 @@ prost-build = { workspace = true }
 
 [dev-dependencies]
 yellowstone-vixen-mock = { path = "../vixen/crates/mock" }
+tempfile = { workspace = true }

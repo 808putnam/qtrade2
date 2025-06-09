@@ -23,26 +23,26 @@ use std::rc::Rc;
 // This test will
 // 1. [test] Start:
 //    - solana-test-validator with yellowstone-geyser-grpc
-//    - qtrade-streamer
-//    - qtrade-client    
+//    - qtrade-indexer
+//    - qtrade-client
 // 2. [test] Deploy programs:
 //    - orca
 //    - raydium-clmm
-// 3. [test] Create mints: 
+// 3. [test] Create mints:
 //    - SOL
 //    - USDC
 // 4. [test] Fund wallets:
 //    - creator(s) (pool creators)
 //    - lp(s) (liquidity providers)
-//    - trader(s) 
-//    - qtrade-explorer (arbitrage) 
+//    - trader(s)
+//    - qtrade-explorer (arbitrage)
 // 5. [test] Create pools:
 //    - orca
 //    - raydium-clmm
 // 6. [test] Create trader swaps:
 //    - orca
 //    - raydium-clmm
-// 7. [qtrade] Submit swaps to qtrade-solver
+// 7. [qtrade] Submit swaps to qtrade-router
 // 8. [qtrade] Create arbitrage swaps:
 //   - orca
 //   - raydium-clmm
@@ -144,7 +144,7 @@ fn start_validator() {
     let wallet = raydium_amm_v3_client::instructions::read_keypair_file(&pool_config.payer_path).expect("Failed to load pool_config.payer_path");
     let anchor_client = Client::new(url, Rc::new(wallet));
     let program = anchor_client.program(pool_config.raydium_v3_program).expect("Failed to load pool_config.raydium_cp_program");
-    
+
     create_mint("mint0_keypair.json", "mint0_authority_keypair.json", &pool_config);
     create_mint("mint1_keypair.json", "mint1_authority_keypair.json", &pool_config);
 

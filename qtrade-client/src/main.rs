@@ -28,13 +28,53 @@ struct Cli {
     blockchain: crate::Blockchain,
 
     #[arg(short, long, value_enum)]
-    solver: crate::Solver,
+    router: crate::Router,
+
+    #[arg(long = "config", value_name = "TOML_CONFIG_FILE",
+          help = "Path to TOML configuration file. If not specified, will look for qtrade.toml in the current directory")]
+    config_file: Option<PathBuf>,
 
     #[arg(short, long = "vixen", value_name = "VIXEN_CONFIG_FILE")]
     vixen_config: PathBuf,
 
-    #[arg(short, long = "wallet", value_name = "WALLET_CONFIG_FILE")]
-    wallet_config: PathBuf,
+    // API key override flags (all optional)
+    #[arg(long, value_name = "BLOXROUTE_API_KEY")]
+    bloxroute_api_key: Option<String>,
+
+    #[arg(long, value_name = "HELIUS_API_KEY")]
+    helius_api_key: Option<String>,
+
+    #[arg(long, value_name = "NEXTBLOCK_API_KEY")]
+    nextblock_api_key: Option<String>,
+
+    #[arg(long, value_name = "QUICKNODE_API_KEY")]
+    quicknode_api_key: Option<String>,
+
+    #[arg(long, value_name = "TEMPORAL_API_KEY")]
+    temporal_api_key: Option<String>,
+
+    // Active RPC providers flag (comma-separated list of providers to use)
+    #[arg(long = "active-rpcs", value_name = "RPC_PROVIDERS",
+          help = "Comma-separated list of RPC providers to use. Available options: bloxroute, helius, jito, nextblock, quicknode, solana, temporal, triton",
+          value_delimiter = ',')]
+    active_rpcs: Option<Vec<String>>,
+
+    // Active DEX platforms flag (comma-separated list of DEXes to use)
+    #[arg(long = "active-dexes", value_name = "DEX_PLATFORMS",
+          help = "Comma-separated list of DEX platforms to use. Available options: orca, raydium, raydium-cpmm, raydium-clmm",
+          value_delimiter = ',')]
+    active_dexes: Option<Vec<String>>,
+
+    // Single wallet mode for testing and debugging
+    #[arg(long, help = "Use a single wallet instead of the multi-tiered wallet system")]
+    single_wallet: bool,
+
+    #[arg(long, value_name = "PRIVATE_KEY", help = "Private key for the single wallet mode")]
+    single_wallet_private_key: Option<String>,
+
+    // Transaction simulation flag
+    #[arg(long, help = "Simulate transactions instead of submitting them to the network")]
+    simulate: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -46,7 +86,7 @@ enum Blockchain {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum Solver {
+enum Router {
     #[clap(rename_all = "lower")]
     Cvxpy,
     #[clap(rename_all = "lower")]
@@ -56,10 +96,7 @@ enum Solver {
 }
 
 struct ClientConfig {
-    blockchain: qtrade_runtime::Blockchain,
-    solver: qtrade_runtime::Solver,
-    vixen_config: String,
-    wallet_config: String,
+    flags: qtrade_runtime::settings::Flags,
     logger_provider: SdkLoggerProvider,
     meter_provider: SdkMeterProvider,
     tracer_provider: SdkTracerProvider,
@@ -68,13 +105,13 @@ struct ClientConfig {
 // An immutable representation of the entity producing telemetry as attributes. Utilizes Arc for efficient sharing and cloning.
 // Creates a ResourceBuilder that allows you to configure multiple aspects of the Resource.
 // This ResourceBuilder will include the following ResourceDetectors:
-// - SdkProvidedResourceDetector 
+// - SdkProvidedResourceDetector
 //   - https://docs.rs/opentelemetry_sdk/latest/opentelemetry_sdk/resource/struct.SdkProvidedResourceDetector.html
 //   - https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md#sdk-provided-resource-attributes
 //   - https://github.com/open-telemetry/semantic-conventions/blob/main/docs/resource/README.md#semantic-attributes-with-sdk-provided-default-value
-// - TelemetryResourceDetector 
+// - TelemetryResourceDetector
 //   - https://docs.rs/opentelemetry_sdk/latest/opentelemetry_sdk/resource/struct.TelemetryResourceDetector.html
-// - EnvResourceDetector 
+// - EnvResourceDetector
 //   - https://docs.rs/opentelemetry_sdk/latest/opentelemetry_sdk/resource/struct.EnvResourceDetector.html
 //   - https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md#specifying-resource-information-via-an-environment-variable
 //
@@ -106,10 +143,7 @@ async fn main() -> Result<()> {
         }
         result = async {
             qtrade_runtime::run_qtrade(
-                &cfg.wallet_config, 
-                &cfg.vixen_config, 
-                cfg.blockchain, 
-                cfg.solver,
+                cfg.flags,
                 cloned_token).await
         } => {
             result?;
@@ -125,7 +159,7 @@ async fn main() -> Result<()> {
 
 fn init_config() -> Result<ClientConfig> {
     let cli = Cli::parse();
-    
+
     let blockchain = match cli.blockchain {
         crate::Blockchain::Solana => {
             qtrade_runtime::Blockchain::Solana
@@ -135,15 +169,15 @@ fn init_config() -> Result<ClientConfig> {
         }
     };
 
-    let solver = match cli.solver {
-        crate::Solver::CFMMRouter => {
-            qtrade_runtime::Solver::CFMMRouter
+    let router = match cli.router {
+        crate::Router::CFMMRouter => {
+            qtrade_runtime::Router::CFMMRouter
         }
-        crate::Solver::Cvxpy => {
-            qtrade_runtime::Solver::Cvxpy
+        crate::Router::Cvxpy => {
+            qtrade_runtime::Router::Cvxpy
         }
-        crate::Solver::OpenQAOA => {
-            qtrade_runtime::Solver::OpenQAOA
+        crate::Router::OpenQAOA => {
+            qtrade_runtime::Router::OpenQAOA
         }
     };
 
@@ -177,7 +211,7 @@ fn init_config() -> Result<ClientConfig> {
     let otel_log_level = env::var("OTEL_LOG_LEVEL")
         .unwrap_or_else(|_| "info".to_string());
     let otel_log_directive = format!("opentelemetry={}", otel_log_level);
-    
+
     // Create a new tracing::Fmt layer to print the logs to stdout. It has a
     // default filter of `info` level and above, and `debug` and above for logs
     // from OpenTelemetry crates.
@@ -197,7 +231,7 @@ fn init_config() -> Result<ClientConfig> {
     // At this point Logs (OTel Logs and Fmt Logs) are initialized, which will
     // allow internal-logs from Tracing/Metrics initializer to be captured.
 
-    // Creator and registry of named SdkTracer instances. 
+    // Creator and registry of named SdkTracer instances.
     // https://docs.rs/opentelemetry_sdk/latest/opentelemetry_sdk/trace/struct.SdkTracerProvider.html
     let tracer_provider = init_traces();
     // Set the global tracer provider using a clone of the tracer_provider.
@@ -217,11 +251,26 @@ fn init_config() -> Result<ClientConfig> {
     // shutdown on it when application ends.
     global::set_meter_provider(meter_provider.clone());
 
+    // Create the Flags struct from CLI arguments
+    let flags = qtrade_runtime::settings::Flags {
+        config_file_path: cli.config_file.map(|p| p.to_string_lossy().into_owned()),
+        vixon_config_path: Some(cli.vixen_config.to_string_lossy().into_owned()),
+        bloxroute_api_key: cli.bloxroute_api_key,
+        helius_api_key: cli.helius_api_key,
+        nextblock_api_key: cli.nextblock_api_key,
+        quicknode_api_key: cli.quicknode_api_key,
+        temporal_api_key: cli.temporal_api_key,
+        active_rpcs: cli.active_rpcs,
+        active_dexes: cli.active_dexes,
+        single_wallet: cli.single_wallet,
+        single_wallet_private_key: cli.single_wallet_private_key,
+        blockchain: Some(blockchain.clone()),
+        router: Some(router.clone()),
+        simulate: cli.simulate,
+    };
+
     Ok(ClientConfig {
-        blockchain,
-        solver,
-        vixen_config: cli.vixen_config.to_string_lossy().into_owned(),
-        wallet_config: cli.wallet_config.to_string_lossy().into_owned(),
+        flags,
         logger_provider,
         meter_provider,
         tracer_provider
@@ -283,8 +332,8 @@ fn init_traces() -> SdkTracerProvider {
         .with_tonic()
         .build()
         .expect("Failed to create span exporter");
-    
-    // Creator and registry of named SdkTracer instances. 
+
+    // Creator and registry of named SdkTracer instances.
     // https://docs.rs/opentelemetry_sdk/latest/opentelemetry_sdk/trace/struct.SdkTracerProvider.html
     SdkTracerProvider::builder()
         .with_resource(RESOURCE.clone())

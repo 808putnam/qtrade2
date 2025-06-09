@@ -35,14 +35,14 @@
             "problemMatcher": ["$rustc"]
         },
         {
-            "label": "cargo build qtrade-solver",
+            "label": "cargo build qtrade-router",
             "type": "shell",
             "command": "cargo",
             "args": [
                 "build",
             ],
             "options": {
-                "cwd": "${workspaceFolder}/qtrade-solver"
+                "cwd": "${workspaceFolder}/qtrade-router"
             },
             "group": {
                 "kind": "build",

@@ -1,0 +1,22 @@
+resource "aws_instance" "userify_instance" {
+    .
+    .
+    user_data = <<-EOF
+      #!/usr/bin/env bash
+      # install package dependencies
+      sudo yum update -y
+      sudo yum -y install unzip gip docker.io jq
+      install userify_instance
+      curl -1 -sSk "https://static.userify.com/installer.sh" | \
+      api_key="api key" \
+      api_id="api_id" \
+      company_name="company_name" \
+      project_name="project_name" \
+      static_host="static.userify.com" \
+      shim_host="configure.userify.com" \
+      self_signed=1 \
+      sudo -s -E
+    EOF
+    .
+    .
+}

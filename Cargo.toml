@@ -6,6 +6,7 @@ members = [
     "anchor/lang",
     "anchor/spl",
     "bx",
+    "jupiter-amm-interface",
     "orca/client",
     "orca/core",
     "orca/macros",
@@ -13,11 +14,11 @@ members = [
     "pyth/pyth-sdk-solana",
     "qtrade-client",
     "qtrade-custom-checks",
-    "qtrade-lander",
+    "qtrade-indexer",
+    "qtrade-relayer",
+    "qtrade-router",
     "qtrade-runtime",
     "qtrade-shared-types",
-    "qtrade-solver",
-    "qtrade-streamer",
     "qtrade-wallets",
     "raydium-clmm/client",
     "raydium-clmm/programs/amm",
@@ -31,14 +32,19 @@ members = [
 ]
 
 exclude = [
+    "jupiter-amm-implementation",
     "raydium-clmm/client",
+    "qtrade-executor/programs/qtrade-executor",
     "staging",
+    "staging-practice"
 ]
 
 [workspace.package]
 edition = "2021"
 
 [workspace.dependencies]
+# jupiter-amm-interface => 0.8
+ahash = "0.8"
 # anchor-lang-idl-spec, anchor-lang-idl
 # anchor-attribute-program, anchor-syn
 # anchor-client => 1
@@ -55,9 +61,9 @@ approx = { version = "^0" }
 arrayref = { version = "0.3.6" }
 # solana-trader-client-rust
 async-trait = "0.1.83"
-# qtrade-solver => 1.1.7
+# qtrade-router => 1.1.7
 aws-config = { version = "1.1.7" }
-# qtrade-solver => 1.51.0
+# qtrade-router => 1.51.0
 aws-sdk-braket = "1.51.0"
 # anchor-lang => 0.21
 # solana-trader-client-rust => 0.22.1
@@ -99,9 +105,9 @@ cargo_toml = { version = "0.19" }
 # raydium_cp_swap_client => 4.1.8
 # raydium_amm_v3_client => 4.1.8
 # yellowstone-vixen => 4.5.4
-# qtrade-streamer => 4.5.4
+# qtrade-indexer => 4.5.4
 clap = { version = "4.1.8", features = ["derive"] }
-# qtrade-solver => 0.9.0
+# qtrade-router => 0.9.0
 clarabel = "0.9.0"
 # raydium_cp_swap_client => 0.2.2
 # raydium_amm_v3_client => 0.2.2
@@ -136,7 +142,7 @@ heck = { version = "0.3" }
 # raydium_amm_v3_client => 0.4.3
 # pyth-sdk => 0.4.3
 hex = "0.4.3"
-# qtrade-solver => 0.13.0
+# qtrade-router => 0.13.0
 itertools = "0.13.0"
 # orca_whirlpools_core => ^0.3
 js-sys = { version = "0.3" }
@@ -151,7 +157,7 @@ log = { version = "0.4.22", features = ["kv"] }
 # raydium_amm_v3 => ^1.11.0
 # raydium_amm_v3_client => ^1.11.0
 mpl-token-metadata = { version = "5" }
-# qtrade-solver => 0.16.1
+# qtrade-router => 0.16.1
 ndarray = "0.16.1"
 # orca_whirlpools_client => ^0.4
 # pyth-sdk-solana => 0.3
@@ -192,11 +198,11 @@ proptest = "1.0"
 # solana-trader-client-rust => 0.13.3
 prost = "0.13.1"
 # yellowstone-vixen-proto => 0.13.1
-# qtrade-streamer => 0.13.1
+# qtrade-indexer => 0.13.1
 prost-build = { version = "0.13.1" }
 # yellowstone-vixen-proto => 0.13.1
 prost-types = { version = "0.13.1" }
-# qtrade-solver (this is necessary to automatically initialize the Python interpreter)
+# qtrade-router (this is necessary to automatically initialize the Python interpreter)
 pyo3 = { version = "0.23.1", features = ["auto-initialize"] }
 # raydium_cp_swap => 0.9
 # raydium_amm_v3 => 0.9
@@ -226,6 +232,8 @@ regex = { version = "1" }
 reqwest = { version = "0.12.4" }
 # solana-trader-client-rust => 0.17.8
 ring = "0.17.8"
+# jupiter-amm-interface => 1.36.0
+rust_decimal = { version = "1.36.0"}
 # solana-trader-client-rust (leaving feature in for now)
 rustls = { version = "0.23.16", features = ["ring"] }
 # pyth-sdk
@@ -330,7 +338,7 @@ spl-math = { version = "0.2", features = ["no-entrypoint"] }
 # raydium_amm_v3_client => 4.0.0
 spl-memo = { version = "6", features = ["no-entrypoint"] }
 # anchor-spl => 0.5
-# qtrade-solver
+# qtrade-router
 # yellowstone-vixen-parser => 0.3.0
 spl-pod = { version = "0.5.0" }
 # anchor-spl => 7
@@ -363,6 +371,8 @@ spl-type-length-value = { version = "0.7.0" }
 # anchor-derive-space, anchor-syn => 1,
 # orca_whirlpools_macros => ^2
 syn = { version = "1", features = ["full", "extra-traits"] }
+# qtrade-runtime
+tempfile = "3.10.1"
 # solana-trader-client-rust => 3.3.1
 test-case = "3.3.1"
 # anchor-lang, anchor-syn => 1
@@ -378,7 +388,7 @@ thiserror = "1"
 # yellowstone-vixen-parser => 1.39.2
 # yellowstone-vixen => 1.39.2
 # solana-trader-client-rust => 1.41.0
-# qtrade-solver => 1
+# qtrade-router => 1
 # qtrade-client
 tokio = { version = "1", features = ["full", "rt-multi-thread"] }
 # solana-trader-client-rust => 0.26.0
@@ -389,7 +399,7 @@ tokio-stream = { version = "0.1.16" }
 tokio-tungstenite = { version = "0.24.0" }
 # qtrade-client
 tokio-util = "0.7.13"
-# qtrade-streamer => 0.8.12
+# qtrade-indexer => 0.8.12
 toml = "0.8.12"
 # yellowstone-vixen-proto => 0.12.1
 # solana-trader-client-rust => 0.12.3
@@ -406,7 +416,7 @@ topograph = { version = "0.4.0", features = [
 tower = "0.5.1"
 # yellowstone-vixen => 0.1.40
 # solana-trader-client-rust => 0.1.40
-# qtrade-streamer => 0.1.40
+# qtrade-indexer => 0.1.40
 # qtrade-client
 tracing = { version = "0.1.40", features = [ "std"] }
 # qtrade-runtime
@@ -414,7 +424,7 @@ tracing-appender = { version = "0.2.3" }
 # qtrade-client
 tracing-core = { version = "0.1", default-features = false}
 # qtrade
-# qtrade-streamer
+# qtrade-indexer
 # qtrade-client
 tracing-subscriber = { version = "0.3.18", default-features = false, features = ["env-filter","registry", "std", "fmt"] }
 # orca_whirlpools_core => ^0.4

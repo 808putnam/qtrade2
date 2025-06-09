@@ -12,22 +12,24 @@ async fn test_full_lifecycle() {
         "sui" => qtrade_runtime::Blockchain::Sui,
         _ => panic!("Invalid BLOCKCHAIN value"),
     };
-    let solver = match env::var("SOLVER").expect("SOLVER not set").as_str() {
-        "cvxpy" => qtrade_runtime::Solver::Cvxpy,
-        "openqaoa" => qtrade_runtime::Solver::OpenQAOA,
-        "cfmmrouter" => qtrade_runtime::Solver::CFMMRouter,
-        _ => panic!("Invalid SOLVER value"),
+    let router = match env::var("ROUTER").expect("ROUTER not set").as_str() {
+        "cvxpy" => qtrade_runtime::Router::Cvxpy,
+        "openqaoa" => qtrade_runtime::Router::OpenQAOA,
+        "cfmmrouter" => qtrade_runtime::Router::CFMMRouter,
+        _ => panic!("Invalid ROUTER value"),
     };
 
     let token = CancellationToken::new();
 
-    match qtrade_runtime::run_qtrade(
-        &wallet_config_path, 
-        &vixon_config_path, 
-        blockchain, 
-        solver,
-        token
-    ).await {
+    // Create flags structure with test configuration
+    let flags = qtrade_runtime::settings::Flags {
+        vixon_config_path: Some(vixon_config_path),
+        blockchain: Some(blockchain),
+        router: Some(router),
+        ..Default::default()
+    };
+
+    match qtrade_runtime::run_qtrade(flags, token).await {
         Ok(_) => println!("qtrade::run_qtrade completed successfully"),
         Err(e) => eprintln!("Error running qtrade::run_qtrade: {:?}", e),
     }

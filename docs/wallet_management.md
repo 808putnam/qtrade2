@@ -33,8 +33,8 @@ flowchart TD
     end
 
     %% External Connections
-    Lander[Lander Module] --> |Request Key| KeyManager
-    Lander --> |Return Key| KeyManager
+    Relayer[Relayer Module] --> |Request Key| KeyManager
+    Relayer --> |Return Key| KeyManager
 
     %% Outputs
     TX --> |Submit| RPC[RPC Provider]
@@ -50,7 +50,7 @@ flowchart TD
     class Bank,Bank_Desc bank
     class Explorer,Explorer_Desc explorer
     class KeyManager,Recovery manager
-    class Lander,RPC external
+    class Relayer,RPC external
 ```
 
 ## Technical Components
@@ -281,9 +281,9 @@ async fn record_key_balances(&self) -> Result<()> {
 
 The Wallet Management System seamlessly integrates with QTrade's transaction pipeline:
 
-1. When the Lander module needs to execute a transaction, it requests an Explorer keypair
+1. When the Relayer module needs to execute a transaction, it requests an Explorer keypair
 2. The Key Manager provides an available Explorer keypair from the pool
-3. The Lander uses this keypair to sign and submit the transaction
+3. The Relayer uses this keypair to sign and submit the transaction
 4. After transaction completion, the keypair is returned to the Key Manager marked for retirement
 5. The Key Manager recovers funds from the retired keypair and returns them to the Bank pool
 6. The system automatically maintains the Explorer key pool to ensure availability

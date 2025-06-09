@@ -2,24 +2,6 @@
 # 1. install_user var is set in task below
 # 2. nodejs_version is set in vars/main.yml
 
-- name: Append MC1_JSON environment variable to .bashrc for ubuntu user
-  become: true
-  lineinfile:
-    path: /home/ubuntu/.bashrc
-    line: 'export MC1_JSON="{{ bare_metal_mc1_json }}"'
-    create: yes
-    owner: ubuntu
-    mode: 0644
-
-- name: Append MC1_JSON base58 environment variable to .bashrc for ubuntu user
-  become: true
-  lineinfile:
-    path: /home/ubuntu/.bashrc
-    line: 'export MC1_JSON_B58="{{ bare_metal_mc1_json_b58 }}"'
-    create: yes
-    owner: ubuntu
-    mode: 0644
-
 - name: Check if ec2-user exists
   ansible.builtin.command: id -u ec2-user
   register: ec2_user_exists
@@ -43,13 +25,35 @@
   become: true
   become_user: "{{ install_user }}"
 
-- name: Source NVM in the current session
-  ansible.builtin.shell: echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc && echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bashrc
-  args:
-    executable: /bin/bash
-  changed_when: false
+- name: Add NVM_DIR export to .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ install_user }}/.bashrc"
+    line: 'export NVM_DIR="$HOME/.nvm"'
+    state: present
+    create: true
+    owner: "{{ install_user }}"
+    mode: "0644"
   become: true
-  become_user: "{{ install_user }}"
+
+- name: Add NVM source line to .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ install_user }}/.bashrc"
+    line: '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
+    state: present
+    create: true
+    owner: "{{ install_user }}"
+    mode: "0644"
+  become: true
+
+- name: Add NVM bash_completion to .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ install_user }}/.bashrc"
+    line: '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"'
+    state: present
+    create: true
+    owner: "{{ install_user }}"
+    mode: "0644"
+  become: true
 
 - name: Load NVM
   ansible.builtin.shell: . "$HOME/.nvm/nvm.sh"

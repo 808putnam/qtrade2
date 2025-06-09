@@ -2,7 +2,7 @@ mod key_pool;
 pub mod metrics;
 
 use anyhow::Result;
-use solana_sdk::signature::Keypair;
+use solana_sdk::signature::{Keypair, Signer};
 use std::env;
 use tracing::{info, warn, error};
 
@@ -12,6 +12,16 @@ pub use crate::metrics as wallet_metrics;
 pub use key_pool::{
     KeyTier, KeyStatus, KeyInfo, KeyPool, KeyManager
 };
+
+/// Wallet configuration settings for controlling wallet behavior
+#[derive(Debug, Clone)]
+pub struct WalletSettings {
+    /// Whether to use a single wallet instead of the multi-tiered wallet system
+    pub single_wallet: bool,
+
+    /// Private key for the single wallet mode (if enabled)
+    pub single_wallet_private_key: Option<String>,
+}
 
 // Constants for key balancing
 const MIN_EXPLORER_KEYS: usize = 5;
@@ -26,7 +36,7 @@ static mut KEY_MANAGER: Option<KeyManager> = None;
 ///
 /// This function initializes the wallet system and then periodically manages wallet balances.
 /// It periodically checks and manages wallet balances based on a timer.
-pub async fn run_wallets(wallet_config_path: &str) -> Result<()> {
+pub async fn run_wallets(settings: WalletSettings) -> Result<()> {
     use opentelemetry::global;
     use opentelemetry::trace::Tracer;
     use std::time::Duration;
@@ -40,7 +50,7 @@ pub async fn run_wallets(wallet_config_path: &str) -> Result<()> {
     let tracer = global::tracer(tracer_name);
 
     // First, initialize the wallet system
-    initialize_wallet_system(wallet_config_path).await?;
+    initialize_wallet_system(&settings).await?;
 
     loop {
         let span_name = format!("{}::run_wallets", WALLETS);
@@ -158,8 +168,17 @@ pub fn get_key_manager() -> Option<KeyManager> {
     }
 }
 
+// Global flag to track if we're in single wallet mode
+static mut SINGLE_WALLET_MODE: bool = false;
+
 /// Balance the key pools, ensuring adequate funding and key availability
 pub async fn balancer() -> Result<()> {
+    // Skip balancing in single wallet mode
+    if unsafe { SINGLE_WALLET_MODE } {
+        info!("Skipping key pool balancing in single wallet mode");
+        return Ok(());
+    }
+
     match get_key_manager() {
         Some(key_manager) => {
             info!("Running key pool balancer...");
@@ -203,6 +222,21 @@ pub async fn balancer() -> Result<()> {
 
 /// Get an explorer keypair for transaction signing
 pub fn get_explorer_keypair() -> Option<(solana_sdk::pubkey::Pubkey, Keypair)> {
+    // Special handling for single wallet mode
+    if unsafe { SINGLE_WALLET_MODE } {
+        if let Some(key_manager) = get_key_manager() {
+            // In single wallet mode, we don't care about normal explorer key management
+            // We'll always return the same key
+            let result = key_manager.get_explorer_keypair();
+            if result.is_some() {
+                wallet_metrics::record_explorer_key_acquired();
+                info!("Single wallet mode: returning the dedicated signing wallet");
+            }
+            return result;
+        }
+    }
+
+    // Normal multi-tier wallet behavior
     match get_key_manager() {
         Some(key_manager) => {
             let result = key_manager.get_explorer_keypair();
@@ -221,6 +255,14 @@ pub fn get_explorer_keypair() -> Option<(solana_sdk::pubkey::Pubkey, Keypair)> {
 
 /// Return an explorer keypair to the pool or mark it as used
 pub fn return_explorer_keypair(pubkey: &solana_sdk::pubkey::Pubkey, retire: bool) -> Result<()> {
+    // In single wallet mode, we don't actually retire keys
+    if unsafe { SINGLE_WALLET_MODE } {
+        // Just pretend we returned it successfully
+        info!("Single wallet mode: ignoring key retirement request (key will be reused)");
+        return Ok(());
+    }
+
+    // Normal multi-tier wallet behavior
     match get_key_manager() {
         Some(key_manager) => {
             let result = key_manager.return_explorer_keypair(pubkey, retire);
@@ -237,13 +279,96 @@ pub fn return_explorer_keypair(pubkey: &solana_sdk::pubkey::Pubkey, retire: bool
     }
 }
 
+/// Initialize a single wallet with a provided private key
+fn init_single_wallet(private_key: &str) -> Result<()> {
+    // Set the global flag for single wallet mode
+    unsafe { SINGLE_WALLET_MODE = true; }
+
+    // Decode the private key from base58
+    let key_bytes = bs58::decode(private_key.trim())
+        .into_vec()
+        .map_err(|e| anyhow::anyhow!("Failed to decode base58 private key: {:?}", e))?;
+
+    // Create a keypair from the bytes
+    let keypair = Keypair::from_bytes(&key_bytes)
+        .map_err(|e| anyhow::anyhow!("Failed to create keypair from bytes: {:?}", e))?;
+
+    // Get the public key for logging
+    let pubkey = keypair.pubkey();
+
+    info!("Initialized single wallet with public key: {}", pubkey);
+
+    // Create our single wallet key manager
+    let key_manager = KeyManager::new(
+        // HODL keys (empty for single wallet mode)
+        vec![],
+        // Bank keys (empty for single wallet mode)
+        vec![],
+        // Explorer keys - just our single wallet
+        vec![(keypair, LAMPORTS_PER_EXPLORER)],
+        // RPC URL
+        &env::var("SOLANA_RPC_URL").unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()),
+        // Min balances - don't matter for single wallet mode
+        0, 0, 0
+    );
+
+    // Store the key manager in our global static
+    unsafe {
+        KEY_MANAGER = Some(key_manager);
+    }
+
+    // Initialize metrics
+    wallet_metrics::init();
+
+    Ok(())
+}
+
+/// Initialize a single wallet with a randomly generated key
+fn init_single_wallet_with_generated_key() -> Result<()> {
+    // Set the global flag for single wallet mode
+    unsafe { SINGLE_WALLET_MODE = true; }
+
+    // Generate new keypair
+    let keypair = Keypair::new();
+    let pubkey = keypair.pubkey();
+
+    info!("Initialized single wallet with GENERATED public key: {}", pubkey);
+    warn!("Using generated keypair for single wallet - this key will not persist across restarts!");
+
+    // Create our single wallet key manager
+    let key_manager = KeyManager::new(
+        // HODL keys (empty for single wallet mode)
+        vec![],
+        // Bank keys (empty for single wallet mode)
+        vec![],
+        // Explorer keys - just our single wallet
+        vec![(keypair, LAMPORTS_PER_EXPLORER)],
+        // RPC URL
+        &env::var("SOLANA_RPC_URL").unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()),
+        // Min balances - don't matter for single wallet mode
+        0, 0, 0
+    );
+
+    // Store the key manager in our global static
+    unsafe {
+        KEY_MANAGER = Some(key_manager);
+    }
+
+    // Initialize metrics
+    wallet_metrics::init();
+
+    Ok(())
+}
+
 /// Initialize the tiered wallet system with the wallet configuration.
 ///
 /// This function initializes our three-tier wallet system:
 /// - HODL keys (cold storage)
 /// - Bank keys (funding wallets)
 /// - Explorer keys (transaction signing wallets)
-async fn initialize_wallet_system(wallet_config_path: &str) -> Result<()> {
+///
+/// Or if single wallet mode is enabled, initializes a single wallet.
+async fn initialize_wallet_system(settings: &WalletSettings) -> Result<()> {
     use opentelemetry::global;
     use opentelemetry::trace::Tracer;
     use tracing::{info, error};
@@ -255,16 +380,30 @@ async fn initialize_wallet_system(wallet_config_path: &str) -> Result<()> {
     let span_name = format!("{}::initialize_wallet_system", "wallets");
 
     tracer.in_span(span_name, |_cx| async move {
-        info!("Initializing tiered wallet system from config at {}", wallet_config_path);
+        // Check for single wallet mode
+        if settings.single_wallet {
+            info!("Initializing wallet system in SINGLE WALLET MODE");
 
-        // Load any wallet configuration from file
-        // TODO: Implement loading keys from configuration file
-
-        // For now, we'll rely on environment variables for keys
-        // Initialize the key manager with environment-provided keys
-        if let Err(e) = init() {
-            error!("Failed to initialize wallet system: {:?}", e);
-            return Err(anyhow::anyhow!("Failed to initialize wallet system: {:?}", e));
+            if let Some(private_key) = &settings.single_wallet_private_key {
+                // Initialize a single wallet with the provided private key
+                if let Err(e) = init_single_wallet(private_key) {
+                    error!("Failed to initialize single wallet: {:?}", e);
+                    return Err(anyhow::anyhow!("Failed to initialize single wallet: {:?}", e));
+                }
+            } else {
+                warn!("Single wallet mode enabled but no private key provided. Using a generated key.");
+                if let Err(e) = init_single_wallet_with_generated_key() {
+                    error!("Failed to initialize single wallet with generated key: {:?}", e);
+                    return Err(anyhow::anyhow!("Failed to initialize single wallet with generated key: {:?}", e));
+                }
+            }
+        } else {
+            // For now, we'll rely on environment variables for keys
+            // Initialize the key manager with environment-provided keys
+            if let Err(e) = init() {
+                error!("Failed to initialize wallet system: {:?}", e);
+                return Err(anyhow::anyhow!("Failed to initialize wallet system: {:?}", e));
+            }
         }
 
         info!("Tiered wallet system initialized successfully");

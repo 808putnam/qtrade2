@@ -102,10 +102,3 @@
     group: ubuntu
     mode: '0644' # read and write permissions to the owner, and read permissions to the group and others
 
-- name: Setup cron job for validator monitoring
-  ansible.builtin.cron:
-    name: "Monitor Agave Validator"
-    user: "ubuntu"
-    minute: "*/5"
-    job: "/home/ubuntu/scripts/monitor-validator.sh"
-    state: present

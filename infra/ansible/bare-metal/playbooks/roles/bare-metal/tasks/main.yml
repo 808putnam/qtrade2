@@ -27,3 +27,6 @@
 
 - name: Install dev tool suite
   ansible.builtin.import_tasks: dev-tools.yml
+
+- name: Setup sensitive settings as environment variables
+  ansible.builtin.import_tasks: settings.yml

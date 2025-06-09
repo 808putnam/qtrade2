@@ -46,13 +46,17 @@
             "stopOnEntry": false,
             "sourceLanguages": ["rust"],
             "env": {
-                "LOG_LEVEL": "info"
+                "LOG_LEVEL": "info",
+                "BLOXROUTE_API_KEY": "${env:BLOXROUTE_API_KEY}",
+                "HELIUS_API_KEY": "${env:HELIUS_API_KEY}",
+                "NEXTBLOCK_API_KEY": "${env:NEXTBLOCK_API_KEY}",
+                "QUICKNODE_API_KEY": "${env:QUICKNODE_API_KEY}",
+                "TEMPORAL_API_KEY": "${env:TEMPORAL_API_KEY}",
+                "QTRADE_NONCE_AUTHORITY_SECRET": "${env:QTRADE_NONCE_AUTHORITY_SECRET}"
             },
             "args": [
-                "--blockchain", "solana",
-                "--solver",     "cvxpy",
-                "--vixen",      "${workspaceFolder}/qtrade-client/config/vixen.toml",
-                "--wallet",     "${workspaceFolder}/qtrade-client/config/wallet_config.ini"
+                "--config", "${workspaceFolder}/qtrade-client/config/qtrade_client.toml",
+                "--vixen", "${workspaceFolder}/qtrade-client/config/vixen.toml",
             ],
         },
         {
@@ -100,7 +104,7 @@
                 "WALLET_CONFIG_PATH": "tests/full_lifecycle/wallet_config.ini",
                 "VIXON_CONFIG_PATH": "tests/full_lifecycle/vixen.toml",
                 "BLOCKCHAIN": "solana",
-                "SOLVER": "cvxpy"
+                "ROUTER": "cvxpy"
             },
             // These are the args after the --
             // Example: cargo test -- --nocapture
@@ -117,7 +121,7 @@
             ]
         },
         {
-            "name": "qtrade-solver",
+            "name": "qtrade-router",
             "type": "lldb",
             "request": "launch",
             "cargo": {
@@ -139,10 +143,10 @@
                 "filter": {
                     "kind": "test"
                 },
-                "cwd": "${workspaceFolder}/qtrade-solver"
+                "cwd": "${workspaceFolder}/qtrade-router"
             },
-            "cwd": "${workspaceFolder}/qtrade-solver",
-            "preLaunchTask": "cargo build qtrade-solver",
+            "cwd": "${workspaceFolder}/qtrade-router",
+            "preLaunchTask": "cargo build qtrade-router",
             "env": {
                 "PYENV_VERSION": "system"
             },

@@ -12,7 +12,7 @@ on:
         description: 'What version of postgres?'
         required: true
         type: string
-        default: '12.22'
+        default: '16'
 
 jobs:
   deploy:

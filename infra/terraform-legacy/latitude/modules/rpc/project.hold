@@ -1,0 +1,8 @@
+# Just keeping in for reference now - we manually create projects in latitude.sh
+# dashboard for now
+resource "latitudesh_project" "project" {
+  name        = "Terraform example project"
+  description = "Latitude.sh Terraform Integration"
+  environment = "Development" # Development, Production or Staging
+  provisioning_type = "TODO"
+}

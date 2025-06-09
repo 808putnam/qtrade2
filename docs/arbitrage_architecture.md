@@ -6,12 +6,12 @@ This document describes the architecture and data flow of the arbitrage system i
 
 The system consists of two main components:
 
-1. **qtrade-solver**: Processes market data and identifies arbitrage opportunities
+1. **qtrade-router**: Processes market data and identifies arbitrage opportunities
    - Uses convex optimization to find profitable trading paths
    - Sends results to qtrade-runtime via a channel
 
 2. **qtrade-runtime**: Executes arbitrage opportunities and manages blockchain interactions
-   - Receives arbitrage results from qtrade-solver
+   - Receives arbitrage results from qtrade-router
    - Processes and executes the identified opportunities
    - Records metrics for performance tracking
 
@@ -30,8 +30,8 @@ flowchart TD
         Parsers --> |Updates| PoolCC[PoolConfigCache]
     end
 
-    %% Solver Component
-    subgraph Solver[qtrade-solver]
+    %% Router Component
+    subgraph Router[qtrade-router]
         PC --> |Pool Data| OPT[Optimizer]
         MintC --> |Token Data| OPT
         OP[Oracle Prices] --> OPT
@@ -41,8 +41,8 @@ flowchart TD
     %% Runtime Component
     subgraph Runtime[qtrade-runtime]
         TC --> |ArbitrageResult| PQ[Processing Queue]
-        PQ --> |Opportunity| Lander
-        Lander --> |Construct Tx| TxBuilder
+        PQ --> |Opportunity| Relayer
+        Relayer --> |Construct Tx| TxBuilder
         TxBuilder --> |Sign| TxSigner
         TxSigner --> |Submit| TxSubmitter
         TxSubmitter --> |Transaction| BC
@@ -54,19 +54,19 @@ flowchart TD
     EH -.-> PQ
 
     %% Circuit Breakers
-    CB[Circuit Breakers] -.-> Lander
+    CB[Circuit Breakers] -.-> Relayer
 
     %% Style Definitions
     classDef external fill:#f96,stroke:#333,stroke-width:2px
     classDef infrastructure fill:#bbf,stroke:#333
-    classDef solver fill:#bfb,stroke:#333
+    classDef router fill:#bfb,stroke:#333
     classDef runtime fill:#fbf,stroke:#333
 
     %% Apply Styles
     class BC,OP external
     class StreamInfra,YV,Parsers,PC,MintC,PoolCC infrastructure
-    class Solver,OPT solver
-    class Runtime,PQ,Lander,TxBuilder,TxSigner,TxSubmitter,Metrics runtime
+    class Router,OPT router
+    class Runtime,PQ,Relayer,TxBuilder,TxSigner,TxSubmitter,Metrics runtime
 ```
 
 ## Streaming Infrastructure Detail
@@ -134,10 +134,10 @@ flowchart TD
         PC -.-> |Cache Stats| OTEL
     end
 
-    %% Output to Solver
-    PC --> |Current Pool State| Solver[To Solver Component]
-    MintC --> |Token Metadata| Solver
-    PoolCC --> |Pool Parameters| Solver
+    %% Output to Router
+    PC --> |Current Pool State| Router[To Router Component]
+    MintC --> |Token Metadata| Router
+    PoolCC --> |Pool Parameters| Router
 
     %% Style Definitions
     classDef external fill:#f96,stroke:#333,stroke-width:2px
@@ -156,7 +156,7 @@ flowchart TD
     class OTEL telemetry
 ```
 
-The streaming infrastructure is the foundation of the entire arbitrage system, providing real-time updates from the Solana blockchain to the solver component. It leverages Yellowstone Vixen's direct connection to the Geyser plugin to receive account updates with minimal latency.
+The streaming infrastructure is the foundation of the entire arbitrage system, providing real-time updates from the Solana blockchain to the router component. It leverages Yellowstone Vixen's direct connection to the Geyser plugin to receive account updates with minimal latency.
 
 ### Key Components
 
@@ -177,7 +177,7 @@ The streaming infrastructure is the foundation of the entire arbitrage system, p
 
 5. **Telemetry**: OpenTelemetry integration captures performance metrics throughout the pipeline to monitor health and efficiency.
 
-The entire system utilizes atomic reference counting and thread-safe data structures to enable concurrent processing while ensuring data consistency. This architecture allows the arbitrage solver to work with an always-current view of the market state.
+The entire system utilizes atomic reference counting and thread-safe data structures to enable concurrent processing while ensuring data consistency. This architecture allows the arbitrage router to work with an always-current view of the market state.
 
 ## Data Flow
 
@@ -186,19 +186,19 @@ The entire system utilizes atomic reference counting and thread-safe data struct
    - Oracle prices are retrieved for market value comparisons
 
 2. **Arbitrage Detection**
-   - The solver periodically runs optimization to identify arbitrage opportunities
+   - The router periodically runs optimization to identify arbitrage opportunities
    - Results are packaged as `ArbitrageResult` objects
 
 3. **Communication Channel**
-   - Results are sent from solver to runtime via a Tokio channel
+   - Results are sent from router to runtime via a Tokio channel
    - A lazy_static pattern ensures the channel is initialized only once
 
 4. **Processing Queue**
-   - The lander component maintains a FIFO queue for arbitrage results
+   - The relayer component maintains a FIFO queue for arbitrage results
    - This ensures orderly processing even with high volumes of opportunities
 
 5. **Execution**
-   - The lander processes each opportunity in order
+   - The relayer processes each opportunity in order
    - Transactions are constructed, signed, and submitted to the blockchain
    - Results are tracked through metrics
 
@@ -206,7 +206,7 @@ The entire system utilizes atomic reference counting and thread-safe data struct
 
 ### ArbitrageResult
 
-The core data structure passed between solver and runtime:
+The core data structure passed between router and runtime:
 
 ```rust
 pub struct ArbitrageResult {

@@ -1,0 +1,36 @@
+{
+  "name": "dexscreener-mcp-server",
+  "version": "0.1.0",
+  "description": "get access to onchain crypto markets on almost any blockchain, best for solana memecoins price api",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "dexscreener-mcp-server": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "scripts"
+  ],
+  "scripts": {
+    "build": "tsc && chmod +x build/index.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "test": "node --no-warnings --loader ts-node/esm --experimental-specifier-resolution=node src/tests/dexscreener.test.ts",
+    "test:watch": "nodemon --exec 'npm test' --ext ts",
+    "start": "node build/index.js",
+    "dev": "nodemon --exec 'npm run build && npm start' --ext ts",
+    "setup": "node scripts/setup-claude.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.1.0",
+    "axios": "^1.7.9",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

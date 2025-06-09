@@ -1,0 +1,34 @@
+# QTrade Configuration File
+# This is an example configuration file for the qtrade application.
+# Settings follow this precedence order:
+# CLI arguments > Environment variables > Config file > Default values
+
+# API Keys
+# These are used for various external services
+bloxroute_api_key = ""
+helius_api_key = ""
+nextblock_api_key = ""
+quicknode_api_key = ""
+temporal_api_key = ""
+
+# Nonce account configuration
+# Nonce accounts are used to prevent transaction replay
+# Format for nonce_accounts is a list of account addresses
+nonce_accounts = []
+nonce_authority_secret = ""
+
+# File paths for other configuration files
+vixon_config_path = "/path/to/vixon_config.json"
+
+# Single wallet mode for testing and debugging
+single_wallet = false
+# Uncomment and set the following to use a specific private key for single wallet mode
+# single_wallet_private_key = "your_private_key_here"
+
+# Runtime configuration
+blockchain = "Solana"  # Options: Solana, Sui
+router = "Cvxpy"  # Options: Cvxpy, OpenQAOA, CFMMRouter
+
+# Transaction simulation flag
+# When enabled, transactions will be simulated but not sent to the network
+simulate = false

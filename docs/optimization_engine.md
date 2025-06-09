@@ -9,11 +9,11 @@ The optimization engine represents a critical component in QTrade's arbitrage sy
 ```mermaid
 flowchart TD
     %% Input Sources
-    PC[PoolCache] --> |Pool States| SLV[Solver Module]
+    PC[PoolCache] --> |Pool States| SLV[Router Module]
     MintC[MintCache] --> |Token Metadata| SLV
     PoolCC[PoolConfigCache] --> |Pool Parameters| SLV
 
-    %% Solver Components
+    %% Router Components
     subgraph Optimization[Optimization Engine]
         SLV --> |Periodic Check| SR[solve_rust]
         SR --> |FFI Bridge| PY3[Python Interpreter]
@@ -115,7 +115,7 @@ lazy_static! {
 This channel implementation ensures:
 - Thread-safety via Mutex locks
 - Back-pressure handling through bounded capacity (100 messages)
-- Low-latency transfer between solver and execution components
+- Low-latency transfer between router and execution components
 
 ## Performance Characteristics
 

@@ -1,0 +1,52 @@
+# QTrade Official Configuration File
+# This is the official configuration file for the qtrade application.
+#
+# Settings follow this precedence order:
+# CLI arguments > Environment variables > Config file > Default values
+#
+# IMPORTANT: For sensitive settings (API keys, secrets), use environment variables
+# instead of defining them in this file.
+
+# API Keys - DO NOT set these values directly in this file!
+# Use environment variables instead:
+# - BLOXROUTE_API_KEY
+# - HELIUS_API_KEY
+# - NEXTBLOCK_API_KEY
+# - QUICKNODE_API_KEY
+# - TEMPORAL_API_KEY
+#
+# Example:
+# export BLOXROUTE_API_KEY="your_api_key"
+#
+# bloxroute_api_key = ""  # Use BLOXROUTE_API_KEY environment variable
+# helius_api_key = ""     # Use HELIUS_API_KEY environment variable
+# nextblock_api_key = ""  # Use NEXTBLOCK_API_KEY environment variable
+# quicknode_api_key = ""  # Use QUICKNODE_API_KEY environment variable
+# temporal_api_key = ""   # Use TEMPORAL_API_KEY environment variable
+
+# Nonce account configuration
+# Nonce accounts are used to prevent transaction replay
+# Format for nonce_accounts is a list of account addresses
+# For sensitive values, use environment variables:
+# - QTRADE_NONCE_ACCOUNTS (comma-separated list)
+# - QTRADE_NONCE_AUTHORITY_SECRET
+nonce_accounts = []
+# nonce_authority_secret = ""  # Use QTRADE_NONCE_AUTHORITY_SECRET environment variable
+
+# File paths for other configuration files
+# Adjust this path based on your deployment environment
+vixon_config_path = "./config/vixen.toml"
+
+# Single wallet mode for testing and debugging
+# Use this for development and testing purposes only
+single_wallet = false
+# single_wallet_private_key = ""  # Use CLI flag or environment variable for this sensitive value
+
+# Runtime configuration
+blockchain = "Solana"  # Options: Solana, Sui
+router = "Cvxpy"  # Options: Cvxpy, OpenQAOA, CFMMRouter
+
+# Transaction simulation flag
+# When enabled, transactions will be simulated but not sent to the network
+# Useful for testing and debugging
+simulate = false

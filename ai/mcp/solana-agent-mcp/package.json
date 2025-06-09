@@ -1,0 +1,15 @@
+{
+  "name": "solana-agent-mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@solana-agent-kit/adapter-mcp": "^2.0.4",
+    "@solana-agent-kit/plugin-token": "^2.0.4",
+    "dotenv": "^16.5.0",
+    "solana-agent-kit": "^2.0.4"
+  }
+}

@@ -9,7 +9,7 @@ The Transaction Builder component represents a critical part of QTrade's arbitra
 ```mermaid
 flowchart TD
     %% Input Data
-    AR[ArbitrageResult] --> |Queue| LND[Lander Module]
+    AR[ArbitrageResult] --> |Queue| LND[Relayer Module]
 
     subgraph TXBuilder[Transaction Builder System]
         LND --> |Extract Data| TXI[Transaction Instructions]
@@ -143,7 +143,7 @@ This sophisticated nonce implementation provides critical advantages:
 
 ### 4. Transaction Construction Pipeline
 
-The lander module processes arbitrage opportunities through a sophisticated construction pipeline:
+The relayer module processes arbitrage opportunities through a sophisticated construction pipeline:
 
 1. **Instruction Generation**: Arbitrage results are translated into Solana program instructions:
    - Swap instructions targeting specific DEX protocols

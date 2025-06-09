@@ -5,3 +5,5 @@ edition.workspace = true
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
+spl-pod = { workspace = true }
+async-trait = { workspace = true }

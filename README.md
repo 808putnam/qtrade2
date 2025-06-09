@@ -1,4 +1,4 @@
-**code snapshot date: May 15, 2025**
+**code snapshot date: June 9, 2025**
 
 # Welcome to QTrade
 *A full stack crypto arbitrage solution - streaming infra, optimization engine, transaction builder, monitoring with Datadog and OpenTelemetry, and hybrid deployment via Ansible and GitHub Actions.*
@@ -12,7 +12,7 @@ At the core of *QTrade* is a custom bare-metal Solana RPC node, enhanced with a 
 *QTrade*'s optimization layer bridges Rust performance with Python flexibility, using a hybrid CVXPY-based solver. Cached DEX pool reserves are streamed into the engine in near real-time, where the solver computes optimal arbitrage routes across multiple pools and tokens—maximizing profit potential while accounting for slippage, fees, and execution constraints.
 
 ## transaction builder
-*QTrade* ensures precise and reliable executions by orchestrating transactions across six distinct RPC providers. Using Solana Nonce accounts, the system guarantees atomicity—ensuring that only one RPC provider will succeed in placing the transaction.
+*QTrade* ensures precise and reliable executions by orchestrating transactions across six distinct RPC providers. Using Solana Nonce accounts, the system guarantees atomicity—ensuring that only one RPC provider will succeed in placing the transaction. The system also supports transaction simulation via the `--simulate` flag, allowing users to test transactions without submitting them to the blockchain network. [Learn more about simulation](./docs/SIMULATION.md).
 
 ## monitoring with Datadog and OpenTelemetry
 *QTrade* employs comprehensive monitoring through Datadog and OpenTelemetry to ensure system reliability and performance. Key metrics track the health of the RPC node, the Yellowstone Geyser plugin, and the status of DEX pool reserves and transactions. Additionally, base-level infrastructure monitoring provides insights into CPU usage, container performance, and system health, ensuring continuous uptime and optimal operation.

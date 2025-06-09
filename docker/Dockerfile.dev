@@ -1,19 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# IMPORTANT: We are using ubuntu 20.04:
-# 1. Solana recommends ubuntu 20.04.
-# 2. We need an official version supported by deadsnakes ppp (see below)
-#    for python installations.
-# 3. Ubuntu 22.04 has moved to OpenSSL 3 Anchor (Solana development) requires OpenSSL 1.1.
-FROM ubuntu:20.04
-
-# TODO:
-# 1. Fix --break-system-packages for pip installs. Best practice with pip
-#    is to install into a vm? Take out --break-system-packages to see error.
-#    Latest update, we do not need this as we have dropped back to bullseye
-#    from bookworm.  We'll leave this in for now as a reminder.
-
-# IMPORTANT NOTES:
+############################
+# IMPORTANT GENERAL NOTES:
 # 1. We mostly only update the .profile file and leave the .bashrc for
 #    prompt settings, bash completion functions, etc.
 #    Reference: https://askubuntu.com/questions/1411833/what-goes-in-profile-and-bashrc
@@ -22,6 +10,57 @@ FROM ubuntu:20.04
 #    the PATH via the .profile file. This will require us to "source" the
 #    .profile file when, for instance, we want to verify a tool we just installed
 #    that depends on being in a path setting just made to .profile.
+# 3. PEP 668 - Externally Managed Environment Policy
+#    Starting with Ubuntu 24.04 (and other modern Linux distributions), Python
+#    enforces PEP 668 to prevent pip from installing packages globally that could
+#    conflict with system package manager installations. This prevents breaking
+#    system tools that depend on specific Python package versions.
+#    Solutions by preference:
+#    1. Virtual environments (python3 -m venv) - best practice for production
+#    2. User installs (pip install --user) - good for host systems
+#    3. System packages (apt install python3-*) - when available
+#    4. --break-system-packages - acceptable for containers/development
+#    For our development container, --break-system-packages is appropriate because:
+#    - Container is isolated from host system
+#    - We need system-wide package access for dev tools
+#    - Container gets rebuilt regularly (no permanent damage risk)
+#    - We control exactly what packages are installed
+#    References:
+#    - https://peps.python.org/pep-0668/
+#    - Ubuntu versions affected: 24.04+, 22.04 (unaffected), 20.04 (unaffected)
+############################
+
+# IMPORTANT: Allow Ubuntu version to be specified at build time.
+#
+# Below are some general notes, but also keep a look out for lines with:
+# RUN if [ "$UBUNTU_VERSION" = "20.04" ]; then \
+# as these will contain logic that is specific to the Ubuntu version.
+#
+# ubuntu 20.04:
+# 1. Solana specifies ubuntu 20.04.
+#     Our qtrade-custom-checks runs on the bare-metal solana node and
+#     we do most of our development on our testnet solana node due the speed
+#     the bare-metal solana node provides.
+# 2. We need an official ubuntu version supported by deadsnakes ppp (see below)
+#    for a python 3.10 installation - currently this is only ubuntu 20.04.
+#    We need python 3.10 for OpenQAOA. Ubuntu 24.04 comes with python 3.12 by default - hence
+#    we cannot use it for OpenQAOA.
+# 3. For ubuntu 20.04 rust builds - we need to update gcc compilers to version 10 (see below).
+#    Ubuntu 24.04 comes with gcc 13 by default.
+# ubuntu 24.04:
+# 1. Anchor needs this version of ubuntu for newer version of gcc libraries. Anchor builds do
+#    not work on ubuntu 20.04.
+# 2. OpenQAOA requires python 3.10. Ubuntu 24.04 comes with python 3.12 by default - hence
+#    we cannot use it for OpenQAOA.
+ARG UBUNTU_VERSION=20.04
+FROM ubuntu:${UBUNTU_VERSION}
+
+#IMPORTANT: This is a Docker requirement - ARG variables declared before FROM
+#           are only scoped to the FROM instruction. To use them in later
+#           instructions, you must re-declare them after FROM.
+ARG UBUNTU_VERSION=20.04
+ARG BREAK_SYSTEM_PACKAGES=""
+RUN echo "Building with UBUNTU_VERSION: $UBUNTU_VERSION; BREAK_SYSTEM_PACKAGES: ${BREAK_SYSTEM_PACKAGES} plus random junk to clear cache xxx"
 
 # IMPORTANT: We get a more familiar shell and one that is more compliant
 #            to the installs below (e.g., asdf won't work with sh) if we
@@ -41,7 +80,7 @@ WORKDIR /tmp
 
 # Define the exact versions for this build
 # Last version that supports python 3.10 which is required by openqaoa
-ARG ANCHOR_VERSION=0.30.1
+ARG ANCHOR_VERSION=0.31.1
 ARG ANSIBLE_VERSION=10.6.0
 ARG ANSIBLE_LINT_VERSION=24.10.0
 ARG AWS_CLI_VERSION=2.22.0
@@ -54,8 +93,8 @@ ARG GIT_LFS_VERSION=3.4.1
 ARG GO_VERSION=1.22.4
 ARG GRPCURL_VERSION=1.9.1
 ARG JUPYTERLAB_VERSION=4.0.9
-ARG NVM_VERSION=0.39.7
-ARG NODE_VERSION=20.10.0
+ARG NVM_VERSION=0.40.1
+ARG NODE_VERSION=20.18.0
 ARG OPENQAOA_VERSION=0.2.6
 ARG PROTOC_VERSION=30.2
 # Mapping as of 2025-05-02 (see rust-toolchain.toml for each)
@@ -89,6 +128,7 @@ ARG TFLINT_VERSION=0.52.0
 # | liblzma-dev          | See notes        | General development, pyenv for building full python         |
 # | libffi-dev           | See notes        | General development, pyenv for building full python         |
 # | libncursesw5-dev     | See notes        | General development, pyenv for building full python         |
+# | libclang-dev         | See notes        | Anchor                                                      |
 # | libprotobuf-dev      | solana           |                                                             |
 # | libreadline-dev      | See notes        | General development, pyenv for building full python         |
 # | libsqlite3-dev       | See notes        | General development, pyenv                                  |
@@ -118,6 +158,10 @@ ARG TFLINT_VERSION=0.52.0
 # | zlib1g-dev           | See notes        | General development, pyenv for building full python, solana |
 
 ############################
+# ubuntu 20.04:
+# We need to install python 3.10 as the default python3 version is 3.8.10 on ubuntu 20.04.
+# We need python 3.10 for OpenQAOA.
+#
 # The deadsnakes PPA (Personal Package Archive) is a repository maintained by the
 # deadsnakes team that provides newer versions of Python that are not available
 # in the default Ubuntu repositories. This PPA is often used to install and
@@ -126,18 +170,29 @@ ARG TFLINT_VERSION=0.52.0
 # The software-properties-common package is required because it provides the
 # add-apt-repository command, which is used to add PPAs (Personal Package Archives)
 # to your system. In this case, it is used to add the deadsnakes PPA.
-# openqoa requires python 3.8 - 3.10
+# openqoa requires python 3.8 - 3.10.
+#
+# ubuntu 24.04:
+# Comes with python 3.12 by default. Hence we cannot use it for OpenQAOA.
 ############################
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install \
-    software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install \
-    python3.10-dev \
-    python3.10-venv \
-    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
-    && update-alternatives --set python3 /usr/bin/python3.10
+RUN if [ "$UBUNTU_VERSION" = "20.04" ]; then \
+        apt-get update && export DEBIAN_FRONTEND=noninteractive \
+        && apt-get -y install \
+        software-properties-common \
+        && add-apt-repository ppa:deadsnakes/ppa \
+        && apt-get update && export DEBIAN_FRONTEND=noninteractive \
+        && apt-get -y install \
+        python3.10-dev \
+        python3.10-venv \
+        && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
+        && update-alternatives --set python3 /usr/bin/python3.10 \
+    ; else \
+        apt-get update && export DEBIAN_FRONTEND=noninteractive \
+        && apt-get -y install \
+        python3-dev \
+        python3-pip \
+        python3-venv \
+    ; fi
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install \
@@ -153,6 +208,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     liblzma-dev \
     libffi-dev \
     libncursesw5-dev \
+    libclang-dev \
     libprotobuf-dev \
     libreadline-dev \
     libsqlite3-dev \
@@ -180,7 +236,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Release builds will fail with:
+# On ubuntu 20.04, QTrade rust release builds will fail with:
 # "Your compiler (cc) is not supported due to a memcmp related bug reported in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95189.
 #  We strongly recommend against using this compiler."
 # Updating to later versions of gcc and g++ resolves this issue.
@@ -188,19 +244,28 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # https://github.com/rustls/rustls/issues/1967
 # https://github.com/librespot-org/librespot/issues/1346
 # https://stackoverflow.com/questions/37806888/configure-error-a-compiler-with-support-for-c11-language-features-is-required
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y remove  gcc g++ \
-    && apt-get -y install gcc-10 g++-10
+#
+# On ubuntu 24.04, we have gcc 13.2.0 by default.
+RUN if [ "$UBUNTU_VERSION" = "20.04" ]; then \
+        apt-get update && export DEBIAN_FRONTEND=noninteractive \
+            && apt-get -y remove  gcc g++ \
+            && apt-get -y install gcc-10 g++-10 \
+    ; fi
 
 ############################
 # Install and upgrade pip
 # Having the latest pip helps speed up pip installs
+# See notes above about python 3.10 on ubuntu 20.04.
+# Note: --ignore-installed bypasses the "Cannot uninstall pip, RECORD file not found"
+# error that occurs on Ubuntu 24.04 when trying to upgrade system-installed pip
 ############################
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+RUN if [ "$UBUNTU_VERSION" = "20.04" ]; then \
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
     && python3.10 get-pip.py \
     && update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.10 1 \
-    && update-alternatives --set pip3 /usr/local/bin/pip3.10
-RUN python3 -m pip install --upgrade pip
+    && update-alternatives --set pip3 /usr/local/bin/pip3.10 \
+    ; fi
+RUN python3 -m pip install --ignore-installed --upgrade pip $BREAK_SYSTEM_PACKAGES
 
 ############################
 # ansible and ansible-lint
@@ -213,8 +278,8 @@ RUN python3 -m pip install --upgrade pip
 # && ansible --version
 # --ignore-installed is needed to avoid a conflict with the system installed version
 #   it may cause issues with other packages that depend on the system installed version
-RUN python3 -m pip install ansible==${ANSIBLE_VERSION}
-RUN python3 -m pip install --ignore-installed ansible-lint==${ANSIBLE_LINT_VERSION}
+RUN python3 -m pip install ansible==${ANSIBLE_VERSION} $BREAK_SYSTEM_PACKAGES
+RUN python3 -m pip install --ignore-installed ansible-lint==${ANSIBLE_LINT_VERSION} $BREAK_SYSTEM_PACKAGES
 
 ############################
 # AWS CLI
@@ -261,18 +326,18 @@ RUN curl -LOS https://github.com/bazelbuild/buildtools/releases/download/v${BUIL
 # build - Python build module
 ############################
 RUN source ~/.profile \
-&& pip3 install build \
-&& python3 -m build --help
+    && python3 -m pip install build $BREAK_SYSTEM_PACKAGES \
+    && python3 -m build --help
 
 ############################
 # Conan
 ############################
-RUN python3 -m pip install conan==${CONAN_VERSION}
+RUN python3 -m pip install conan==${CONAN_VERSION} $BREAK_SYSTEM_PACKAGES
 
 ############################
 # cvxpy
 ############################
-RUN python3 -m pip install cvxpy==${CVXPY_VERSION}
+RUN python3 -m pip install cvxpy==${CVXPY_VERSION} $BREAK_SYSTEM_PACKAGES
 
 ############################
 # Docker CLI completion
@@ -331,7 +396,7 @@ RUN curl -LOS https://julialang-s3.julialang.org/bin/linux/x64/1.7/julia-1.7.3-l
 ############################
 # Jupyter
 ############################
-RUN python3 -m pip install jupyterlab==${JUPYTERLAB_VERSION}
+RUN python3 -m pip install jupyterlab==${JUPYTERLAB_VERSION} $BREAK_SYSTEM_PACKAGES
 
 ############################
 # nvm, node, npm and node packages
@@ -352,9 +417,13 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/instal
 ############################
 # openqaoa
 # Notes:
-# 1. openqaoa requires python 3.8 - 3.10
+# 1. openqaoa requires python 3.10
+# 2. ubuntu 24.04 comes with python 3.12 by default - hence
+#    we cannot use it for OpenQAOA.
 ############################
-RUN python3 -m pip install openqaoa==${OPENQAOA_VERSION}
+RUN if [ "$UBUNTU_VERSION" = "20.04" ]; then \
+        python3 -m pip install openqaoa==${OPENQAOA_VERSION} $BREAK_SYSTEM_PACKAGES \
+    ; fi
 
 ############################
 # PostgreSQL
@@ -380,47 +449,38 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup-init.sh \
 RUN source ~/.profile \
     && cargo --version
 
-# TODO: For anchor version 0.31. we need glibc 2.39
-# Upgrade GCC and G++ to version 10 (or newer)
-# RUN apt-get -y remove gcc g++ \
-# && apt-get -y install gcc-10 g++-10 \
-# && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 \
-# && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
-# Anchor requires glibc version 2.39, ubuntu 20.04 has 2.31
-# RUN wget http://ftp.gnu.org/gnu/libc/glibc-2.39.tar.gz \
-#     && tar -xvzf glibc-2.39.tar.gz \
-#     && cd glibc-2.39 \
-#     && mkdir build && cd build \
-#     && ../configure --prefix=/usr \
-#     && make -j$(nproc) \
-#     && make install \
-#     && cd ../.. \
-#     && rm -rf glibc-2.39 glibc-2.39.tar.gz \
-#     && ldconfig
-
 ############################
 # Solana
-# Includes yarn and anchor
 # References:
 # https://docs.solana.com/cli/install-solana-cli-tools
-# https://yarnpkg.com/getting-started/install
-# https://www.anchor-lang.com/docs/installation
 ############################
 RUN sh -c "$(curl -sSfL https://release.anza.xyz/v${SOLANA_VERSION}/install)" \
     && source ~/.profile \
     && solana --version
-# TODO
-# RUN source ~/.profile \
-#     && corepack enable
-#     # TODO: why isn't this working? && yarn --version
-RUN source ~/.profile \
-    && cargo install --git https://github.com/coral-xyz/anchor avm --force \
-    && avm install ${ANCHOR_VERSION} \
-    && anchor --version
+
+############################
+# Anchor
+# Notes:
+# 1. Anchor builds do not work on ubuntu 20.04.
+# 2. Includes yarn installation
+# References:
+# https://www.anchor-lang.com/docs/installation
+# https://yarnpkg.com/getting-started/install
+############################
+RUN if [ "$UBUNTU_VERSION" = "24.04" ]; then \
+        source ~/.profile \
+            && source ~/.nvm/nvm.sh \
+            && npm install -g corepack \
+            && corepack enable \
+            && yarn --version \
+            && cargo install --git https://github.com/coral-xyz/anchor avm --force \
+            && avm install ${ANCHOR_VERSION} \
+            && anchor --version \
+    ; fi
 
 ############################
 # solana-mcp
-# For some reason we need to sourc ~/.nvm/nvm.sh directly
+# For some reason we need to source ~/.nvm/nvm.sh directly
 # instead of ~/.profile.
 ############################
 RUN source ~/.nvm/nvm.sh \
@@ -454,86 +514,3 @@ RUN curl -LOS  https://github.com/terraform-linters/tflint/releases/download/v${
 RUN source ~/.nvm/nvm.sh \
     && npm install -g wscat \
     && wscat --version
-
-
-############################
-# Legacy from here on down
-# Keeping for now as a reference
-############################
-
-# Begin: Holding off on nautilus for now
-# ARG POETRY_VERSION=1.6.1
-# ARG PRECOMMIT_VERSION=3.6.0
-# ARG PYENV_VERSION=2.3.29
-# ARG PYTHON_VERSION=3.12
-# End: Holding off on nautilus for now
-
-# TODO: Pyenv suggested build environment - remove once we have tested
-# build-essential
-# curl
-# libbz2-dev
-# liblzma-dev
-# libffi-dev
-# libncursesw5-dev
-# libreadline-dev
-# libsqlite3-dev
-# libssl-dev
-# libxml2-dev
-# libxmlsec1-dev
-# tk-dev
-# xz-utils
-# zlib1g-dev
-
-############################
-# PM2
-# Holding off on nautilus for now
-############################
-# RUN source ~/.profile \
-#     && npm install pm2@latest -g \
-#     && pm2 --version
-
-############################
-# Poetry
-# Holding off on nautilus for now
-############################
-# Poetry will attempt to put it's wrapper file here
-# Note: $HOME is not available in ENV commands
-# RUN mkdir -p $HOME/.local/bin
-# RUN echo 'export PATH=$PATH:/root/.local/bin' >> ~/.profile
-# RUN curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION}
-# RUN source ~/.profile \
-#     && poetry --version
-# # Pre-configure poetry for in-project virtualenvs
-# RUN mkdir -p /root/.config/pypoetry && touch $_/config.toml
-# RUN echo -e '\
-#     [virtualenvs]\n\
-#     in-project = true'\
-#     >> /root/.config/pypoetry/config.toml
-
-############################
-# Pyenv
-# Holding off on nautilus for now
-# We setup python version 3.11 to stay in sync with what is
-# used with nautilus dockerfile which uses python:3.11-slim
-# Note, Pyenv install instructions recommends updating both .bashrc and .profile.
-# Reference: https://github.com/pyenv/pyenv#getting-pyenv
-############################
-# ENV PYENV_GIT_TAG=v${PYENV_VERSION}
-# RUN curl https://pyenv.run | bash
-# RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-# RUN echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-# RUN echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-# RUN echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.profile
-# RUN echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.profile
-# RUN echo 'eval "$(pyenv init -)"' >> ~/.profile
-# RUN source ~/.profile \
-#      && pyenv install ${PYTHON_VERSION} \
-#      && pyenv versions
-# ENV PYENV_VERSION=${PYTHON_VERSION}
-
-############################
-# pre-commit
-# Holding off on nautilus for now
-# Needs to come after our defined python setup with pyenv
-############################
-# RUN python3 -m pip install pre-commit==${PRECOMMIT_VERSION}

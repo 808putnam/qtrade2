@@ -6,11 +6,13 @@
 # Example: docker build --build-arg DD_API_KEY=$DD_API_KEY -t my_image .
 # ARG DD_API_KEY
 
+# Global ARG for Ubuntu version
+ARG UBUNTU_VERSION=20.04
+
 ############################
 # Stage 1: Builder
 ############################
-# FROM ghcr.io/808putnam/qtrade-build:0.1.1 as builder
-FROM ghcr.io/808putnam/qtrade-dev:0.1.49 as builder
+FROM ghcr.io/808putnam/qtrade-dev-20.04:0.1.53 as builder
 
 # setup environment
 RUN mkdir -p /app/qtrade
@@ -20,13 +22,17 @@ WORKDIR /app/qtrade
 # better utilize it's caching mechanism
 COPY anchor               /app/qtrade/anchor
 COPY bx                   /app/qtrade/bx
+COPY jupiter-amm-interface /app/qtrade/jupiter-amm-interface
 COPY orca                 /app/qtrade/orca
 COPY pyth                 /app/qtrade/pyth
 COPY qtrade-client        /app/qtrade/qtrade-client
 COPY qtrade-custom-checks /app/qtrade/qtrade-custom-checks
+COPY qtrade-indexer       /app/qtrade/qtrade-indexer
+COPY qtrade-relayer       /app/qtrade/qtrade-relayer
+COPY qtrade-router        /app/qtrade/qtrade-router
 COPY qtrade-runtime       /app/qtrade/qtrade-runtime
-COPY qtrade-solver        /app/qtrade/qtrade-solver
-COPY qtrade-streamer      /app/qtrade/qtrade-streamer
+COPY qtrade-shared-types  /app/qtrade/qtrade-shared-types
+COPY qtrade-wallets       /app/qtrade/qtrade-wallets
 COPY raydium-clmm         /app/qtrade/raydium-clmm
 COPY raydium-cp-swap      /app/qtrade/raydium-cp-swap
 COPY vixen                /app/qtrade/vixen
@@ -45,8 +51,7 @@ RUN source ~/.profile \
 # 1. Solana recommends ubuntu 20.04.
 # 2. We need an official version supported by deadsnakes ppp (see below)
 #    for python installations.
-# 3. Ubuntu 22.04 has moved to OpenSSL 3 Anchor (Solana development) requires OpenSSL 1.1.
-FROM ubuntu:20.04 as release
+FROM ubuntu:${UBUNTU_VERSION} as release
 
 # TODO:
 # 1. Fix --break-system-packages for pip installs. Best practice with pip
@@ -229,8 +234,8 @@ RUN source ~/.profile \
 ############################
 # Build and install the qtrade package
 ############################
-COPY qtrade-arbitrage /app/qtrade-arbitrage
-WORKDIR /app/qtrade-arbitrage
+COPY qtrade-router-cvxpy /app/qtrade-router-cvxpy
+WORKDIR /app/qtrade-router-cvxpy
 RUN python3 -m build
 RUN pip3 install dist/*.whl
 WORKDIR /tmp
@@ -292,8 +297,8 @@ RUN chown -R qtrade:qtrade /app/qtrade-client/config
 WORKDIR /app/qtrade
 
 COPY docker/docker-entrypoint.sh                             /app/qtrade-client/docker-entrypoint.sh
+COPY qtrade-client/config/qtrade_client.toml                 /app/qtrade-client/config/qtrade_client.toml
 COPY qtrade-client/config/vixen.toml                         /app/qtrade-client/config/vixen.toml
-COPY qtrade-client/config/wallet_config.ini                  /app/qtrade-client/config/wallet_config.ini
 COPY --from=builder /app/qtrade/target/release/qtrade-client /app/qtrade-client/qtrade-client
 
 ENTRYPOINT [ "/app/qtrade-client/docker-entrypoint.sh" ]

@@ -35,7 +35,7 @@ qtrade_client_mc1_json: !vault |
           64303137333434313466316439356133636533623731616239353730383435383463643061623261
           62353636346233636635
 
-qtrade_client_args: "--blockchain solana --solver cvxpy --vixen /app/qtrade-client/config/vixen.toml  --wallet /app/qtrade-client/config/wallet_config.ini"
+qtrade_client_args: "--config /app/qtrade-client/config/qtrade_client.toml --vixen /app/qtrade-client/config/vixen.toml"
 qtrade_client_detach_opt: true
 qtrade_client_docker_name: "qtrade-client"
 qtrade_client_docker_user: "808putnam"
