@@ -3,8 +3,6 @@
 # Welcome to QTrade
 *A modular DeFi infrastructure platform powering crypto arbitrage, DEX aggregation, trading analytics, and more - built with indexer, router, relayer, monitor, and deploy components.*
 
-For more information, check out the [documentation](https://808putnam.gitbook.io/qtrade).
-
 QTrade provides the architectural building blocks for diverse DeFi applications including:
 - **Crypto Arbitrage** - Cross-DEX profit maximization
 - **DEX Aggregator** - Optimal routing across liquidity sources
